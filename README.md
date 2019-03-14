@@ -1,8 +1,8 @@
 # Viridian backend chaincode
 
-The Viridian Project plans to employ a Hyperledger Fabric blockchain network to
-manage its assets: data and information on the sustainability of products,
-producers and product/producer labels.
+The Viridian Project plans to employ a [Hyperledger Fabric](https://hyperledger-fabric.readthedocs.io)
+blockchain network to manage its assets: data and information on the
+sustainability of products, producers and product/producer labels.
 
 The code in this repository is the so-called 'chaincode': software installed on
 the peers participating in the blockchain network that is used to both access
