@@ -14,3 +14,8 @@ to the ledger are legitimate. When a request to change the ledger is sent via
 the network, a certain number of peers need to validate the request and agree
 that the proposed change is legitimate by adding their signature.
 
+This chaincode follows along the two tutorials
+[https://hyperledger-fabric.readthedocs.io/en/release-1.4/chaincode4ade.html](Chaincode
+for Developers) and
+  [https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html](Using CouchDB).
+
