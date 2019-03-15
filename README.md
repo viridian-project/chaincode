@@ -17,5 +17,9 @@ that the proposed change is legitimate by adding their signature.
 This chaincode follows along the two tutorials
 [https://hyperledger-fabric.readthedocs.io/en/release-1.4/chaincode4ade.html](Chaincode
 for Developers) and
-  [https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html](Using CouchDB).
+[https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html](Using CouchDB).
 
+## Deployment
+
+The content of this directory should be placed under `$GOPATH/src`, e.g. in a
+directory `$GOPATH/src/viridian`.
