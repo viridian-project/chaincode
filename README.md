@@ -18,6 +18,8 @@ This chaincode follows along the two tutorials
 [https://hyperledger-fabric.readthedocs.io/en/release-1.4/chaincode4ade.html](Chaincode
 for Developers) and
 [https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html](Using CouchDB).
+The code is mainly based on the marbles02 example provided with a Hyperledger
+Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.go`.
 
 ## Deployment
 
