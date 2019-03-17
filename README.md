@@ -25,3 +25,10 @@ Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.
 
 The content of this directory should be placed under `$GOPATH/src`, e.g. in a
 directory `$GOPATH/src/viridian`.
+
+### Compile the chaincode
+
+```
+go get -u github.com/hyperledger/fabric/core/chaincode/shim
+go build
+```
