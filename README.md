@@ -26,9 +26,27 @@ Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.
 The content of this directory should be placed under `$GOPATH/src`, e.g. in a
 directory `$GOPATH/src/viridian`.
 
+<!--
 ### Compile the chaincode
 
 ```
 go get -u github.com/hyperledger/fabric/core/chaincode/shim
 go build
+```
+-->
+
+### Start a test newtwork
+
+```
+cd fabric-samples/first-network
+# Make sure previous networks are removed so that we have a clean statedb
+./byfn.sh down
+# Start up BYFN network with COUCHDB
+./byfn.sh up -c mychannel -s couchdb
+```
+
+### Install and instantiate chaincode
+
+```
+docker exec -it cli bash
 ```

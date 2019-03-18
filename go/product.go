@@ -130,20 +130,16 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 	// Handle different functions
 	if function == "initProduct" { // create a new product
 		return t.initProduct(stub, args)
-	// } else if function == "transferMarble" { // change owner of a specific marble
-	// 	return t.transferMarble(stub, args)
-	// } else if function == "transferMarblesBasedOnColor" { //transfer all marbles of a certain color
-	// 	return t.transferMarblesBasedOnColor(stub, args)
-	// } else if function == "delete" { //delete a marble
+	// } else if function == "delete" { // delete a product
 	// 	return t.delete(stub, args)
-	// } else if function == "readMarble" { //read a marble
-	// 	return t.readMarble(stub, args)
-	// } else if function == "queryMarblesByOwner" { //find marbles for owner X using rich query
-	// 	return t.queryMarblesByOwner(stub, args)
-	// } else if function == "queryMarbles" { //find marbles based on an ad hoc rich query
-	// 	return t.queryMarbles(stub, args)
-	// } else if function == "getHistoryForMarble" { //get history of values for a marble
-	// 	return t.getHistoryForMarble(stub, args)
+	// } else if function == "readProduct" { //read a product
+	// 	return t.readProduct(stub, args)
+	} else if function == "queryProductsByGTIN" { // find product for GTIN X using rich query
+		return t.queryProductsByGTIN(stub, args)
+	// } else if function == "queryProducts" { // find products based on an ad hoc rich query
+	// 	return t.queryProducts(stub, args)
+	// } else if function == "getHistoryForProduct" { // get history of values for a product
+	// 	return t.getHistoryForProduct(stub, args)
 	// } else if function == "getMarblesByRange" { //get marbles based on range query
 	// 	return t.getMarblesByRange(stub, args)
 	// } else if function == "getMarblesByRangeWithPagination" {
@@ -241,7 +237,7 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
   }
 
 	// ==== Check if product with this GTIN already exists ====
-  // TODO: use GetQueryResult(query string)
+  // TODO: use stub.GetQueryResult(query string)
 	// productAsBytes, err := stub.GetState(productName)
 	// if err != nil {
 	// 	return shim.Error("Failed to get product: " + err.Error())
@@ -262,7 +258,7 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
 		return shim.Error(err.Error())
 	}
 	//Alternatively, build the product json string manually if you don't want to use struct marshalling
-	//productJSONasString := `{"docType":"Marble",  "name": "` + productName + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "owner": "` + owner + `"}`
+	//productJSONasString := `{"docType":"product",  "name": "` + productName + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "owner": "` + owner + `"}`
 	//productJSONasBytes := []byte(str)
 
 	// === Save product to state ===
@@ -289,4 +285,101 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
 	// ==== Product saved and indexed. Return success ====
 	fmt.Println("- end init product")
 	return shim.Success(nil)
+}
+
+// ===========================================================================================
+// constructQueryResponseFromIterator constructs a JSON array containing query results from
+// a given result iterator
+// ===========================================================================================
+func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) (*bytes.Buffer, error) {
+	// buffer is a JSON array containing QueryResults
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	bArrayMemberAlreadyWritten := false
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"Key\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(queryResponse.Key)
+		buffer.WriteString("\"")
+
+		buffer.WriteString(", \"Value\":")
+		// Record is a JSON object, so we write as-is
+		buffer.WriteString(string(queryResponse.Value))
+		buffer.WriteString("}")
+		bArrayMemberAlreadyWritten = true
+	}
+	buffer.WriteString("]")
+
+	return &buffer, nil
+}
+
+// =========================================================================================
+// getQueryResultForQueryString executes the passed in query string.
+// Result set is built and returned as a byte array containing the JSON results.
+// =========================================================================================
+func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]byte, error) {
+
+	fmt.Printf("- getQueryResultForQueryString queryString:\n%s\n", queryString)
+
+	resultsIterator, err := stub.GetQueryResult(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	buffer, err := constructQueryResponseFromIterator(resultsIterator)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("- getQueryResultForQueryString queryResult:\n%s\n", buffer.String())
+
+	return buffer.Bytes(), nil
+}
+
+// =======Rich queries =========================================================================
+// Two examples of rich queries are provided below (parameterized query and ad hoc query).
+// Rich queries pass a query string to the state database.
+// Rich queries are only supported by state database implementations
+//  that support rich query (e.g. CouchDB).
+// The query string is in the syntax of the underlying state database.
+// With rich queries there is no guarantee that the result set hasn't changed between
+//  endorsement time and commit time, aka 'phantom reads'.
+// Therefore, rich queries should not be used in update transactions, unless the
+// application handles the possibility of result set changes between endorsement and commit time.
+// Rich queries can be used for point-in-time queries against a peer.
+// ============================================================================================
+
+// ===== Example: Parameterized rich query =================================================
+// queryProductsByGTIN queries for products based on a passed in GTIN number (barcode).
+// This is an example of a parameterized query where the query logic is baked into the chaincode,
+// and accepting a single query parameter (GTIN).
+// Only available on state databases that support rich query (e.g. CouchDB)
+// =========================================================================================
+func (t *SimpleChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+
+	//       0
+	// "7612100055557"
+	if len(args) < 1 {
+		return shim.Error("Incorrect number of arguments. Expecting 1")
+	}
+
+	gtin := args[0]
+
+	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"gtin\": \"%s\"}}", gtin)
+
+	queryResults, err := getQueryResultForQueryString(stub, queryString)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(queryResults)
 }

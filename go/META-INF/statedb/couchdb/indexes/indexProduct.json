@@ -1,8 +1,8 @@
 {
   "index": {
-    "fields": ["docType", "id", "gtin"]
+    "fields": ["docType", "gtin"]
   },
-  "ddoc": "indexProductDoc",
-  "name":"indexProduct",
+  "ddoc": "indexProductGTINDoc",
+  "name":"indexProductGTIN",
   "type":"json"
 }
