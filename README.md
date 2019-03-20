@@ -23,19 +23,32 @@ Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.
 
 ## Deployment
 
-The content of this directory should be placed under `$GOPATH/src`, e.g. in a
-directory `$GOPATH/src/viridian`.
-
-<!--
-### Compile the chaincode
+First install go package dependencies:
 
 ```
 go get -u github.com/hyperledger/fabric/core/chaincode/shim
-go build
+# go get -u github.com/hyperledger/fabric/protos/peer # seems unnecessary after first command
 ```
--->
 
-### Start a test newtwork
+Then place the content of this repository under `$GOPATH/src/github.com/hyperledger/fabric/peer`,
+e.g. in a directory `$GOPATH/src/github.com/hyperledger/fabric/peer/viridian`.
+
+```
+cd $GOPATH/src/github.com/hyperledger/fabric/peer
+git clone https://github.com/viridian-project/chaincode.git viridian
+```
+
+### Compile the chaincode
+
+See https://stackoverflow.com/questions/37433618/how-to-use-a-chaincode-thats-not-on-github?rq=1.
+
+```
+cd $GOPATH/src/github.com/hyperledger/fabric/peer/viridian/go
+# go build
+go test -run BuildImage_Peer
+```
+
+### Start a test network
 
 ```
 cd fabric-samples/first-network
@@ -43,6 +56,8 @@ cd fabric-samples/first-network
 ./byfn.sh down
 # Start up BYFN network with COUCHDB
 ./byfn.sh up -c mychannel -s couchdb
+# Login to docker container named 'cli'
+docker exec -it cli bash
 ```
 
 ### Install and instantiate chaincode
