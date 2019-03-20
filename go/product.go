@@ -155,15 +155,15 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 // ===============================================================
 // initProduct - create a new product, store into chaincode state
 // ===============================================================
-func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var err error
 
   // TODO: create incremental ID
-  id := 1
+  id := uint64(1)
   createdBy := "user123";
   createdAt := "2019-03-17 22:45:35 UTC"
-  updatedBy := nil
-  updatedAt := nil
+  updatedBy := ""
+  updatedAt := ""
 
 	//   0                  1              2                  3         4
 	// GTIN,             Producer,      ContainedProducts, Labels,    Locale
@@ -194,46 +194,46 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
 
   // === Arg 2: ContainedProducts ===
   var containedProducts []string
-  err := json.Unmarshal([]byte(args[2]), &containedProducts)
+  err = json.Unmarshal([]byte(args[2]), &containedProducts)
   if err != nil {
     return shim.Error("3rd argument 'containedProducts' must be a string with " +
       "a JSON list of IDs of contained products: [\"123\", \"456\", ...] " +
       "(or an empty list: [])")
   }
   if len(containedProducts) > 0 {
-    fmt.Println("ContainedProducts: " + containedProducts)
+    fmt.Printf("ContainedProducts: %v", containedProducts)
   } else {
     fmt.Println("ContainedProducts not provided")
   }
 
   // === Arg 3: Labels ===
   var labels []string
-  err := json.Unmarshal([]byte(args[3]), &labels)
+  err = json.Unmarshal([]byte(args[3]), &labels)
   if err != nil {
     return shim.Error("4th argument 'labels' must be a string with " +
       "a JSON list of labels labelling this product: [\"Fairtrade\", \"GOTS\", ...]" +
       "(or an empty list: [])")
   }
   if len(labels) > 0 {
-    fmt.Println("Labels: " + labels)
+    fmt.Printf("Labels: %v", labels)
   } else {
     fmt.Println("Labels not provided")
   }
 
   // === Arg 4: Locale ===
   var locale []ProductLocaleData
-  err := json.Unmarshal([]byte(args[4]), &locale)
+  err = json.Unmarshal([]byte(args[4]), &locale)
   if err != nil {
     return shim.Error("5th argument 'locale' must be a string with " +
       "a JSON list of objects with keys 'lang', 'name', 'price', 'currency', " +
       "'description', 'quantity', 'ingredients', 'packaging', 'categories', "+
       "'image', 'productUrl', where each contains a string, except 'packaging' "+
-      "and 'categories' contain a list of strings."
+      "and 'categories' contain a list of strings.")
   }
-  if len(labels) > 0 {
-    fmt.Println("Labels: " + labels)
+  if len(locale) > 0 {
+    fmt.Printf("Locale: %+v", locale)
   } else {
-    fmt.Println("Labels not provided")
+    fmt.Println("Locale not provided")
   }
 
 	// ==== Check if product with this GTIN already exists ====
@@ -247,11 +247,11 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
 	// }
 
   // Create new initial score
-  score := &Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
+  score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
 
 	// ==== Create product object and marshal to JSON ====
 	objectType := "product"
-	product := &Product{objectType, id, gtin, createdBy, createAt, updatedBy, updatedAt,
+	product := &Product{objectType, id, gtin, createdBy, createdAt, updatedBy, updatedAt,
     producer, containedProducts, labels, locale, score, "active"}
 	productJSONasBytes, err := json.Marshal(product)
 	if err != nil {
@@ -262,7 +262,7 @@ func (t *SimpleChaincode) initProduct(stub shim.ChaincodeStubInterface, args []s
 	//productJSONasBytes := []byte(str)
 
 	// === Save product to state ===
-	err = stub.PutState(id, productJSONasBytes)
+	err = stub.PutState(string(id), productJSONasBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -365,7 +365,7 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 // and accepting a single query parameter (GTIN).
 // Only available on state databases that support rich query (e.g. CouchDB)
 // =========================================================================================
-func (t *SimpleChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	//       0
 	// "7612100055557"
