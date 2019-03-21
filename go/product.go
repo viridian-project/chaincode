@@ -1,8 +1,9 @@
 package main
 
 import (
-  "fmt"
+  "bytes"
   "encoding/json"
+  "fmt"
 
   "github.com/hyperledger/fabric/core/chaincode/shim"
   "github.com/hyperledger/fabric/protos/peer"
@@ -267,20 +268,20 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 		return shim.Error(err.Error())
 	}
 
-	//  ==== Index the product to enable color-based range queries, e.g. return all blue products ====
-	//  An 'index' is a normal key/value entry in state.
-	//  The key is a composite key, with the elements that you want to range query on listed first.
-	//  In our case, the composite key is based on indexName~color~name.
-	//  This will enable very efficient state range queries based on composite keys matching indexName~color~*
-	indexName := "color~name"
-	colorNameIndexKey, err := stub.CreateCompositeKey(indexName, []string{product.Color, product.Name})
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	//  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the product.
-	//  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
-	value := []byte{0x00}
-	stub.PutState(colorNameIndexKey, value)
+	// //  ==== Index the product to enable color-based range queries, e.g. return all blue products ====
+	// //  An 'index' is a normal key/value entry in state.
+	// //  The key is a composite key, with the elements that you want to range query on listed first.
+	// //  In our case, the composite key is based on indexName~color~name.
+	// //  This will enable very efficient state range queries based on composite keys matching indexName~color~*
+	// indexName := "color~name"
+	// colorNameIndexKey, err := stub.CreateCompositeKey(indexName, []string{product.Color, product.Name})
+	// if err != nil {
+	// 	return shim.Error(err.Error())
+	// }
+	// //  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the product.
+	// //  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
+	// value := []byte{0x00}
+	// stub.PutState(colorNameIndexKey, value)
 
 	// ==== Product saved and indexed. Return success ====
 	fmt.Println("- end init product")
