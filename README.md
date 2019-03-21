@@ -23,18 +23,11 @@ Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.
 
 ## Deployment
 
-First install go package dependencies:
+Place the content of this repository under `fabric-samples/chaincode`,
+e.g. in a directory `fabric-samples/chaincode/viridian`.
 
 ```
-go get -u github.com/hyperledger/fabric/core/chaincode/shim
-# go get -u github.com/hyperledger/fabric/protos/peer # seems unnecessary after first command
-```
-
-Then place the content of this repository under `$GOPATH/src/github.com/hyperledger/fabric/peer`,
-e.g. in a directory `$GOPATH/src/github.com/hyperledger/fabric/peer/viridian`.
-
-```
-cd $GOPATH/src/github.com/hyperledger/fabric/peer
+cd fabric-samples/chaincode
 git clone https://github.com/viridian-project/chaincode.git viridian
 ```
 
@@ -42,22 +35,56 @@ git clone https://github.com/viridian-project/chaincode.git viridian
 
 See https://stackoverflow.com/questions/37433618/how-to-use-a-chaincode-thats-not-on-github?rq=1.
 
+First install go package dependencies:
+
 ```
-cd $GOPATH/src/github.com/hyperledger/fabric/peer/viridian/go
+go get -u github.com/hyperledger/fabric/core/chaincode/shim
+# go get -u github.com/hyperledger/fabric/protos/peer # seems unnecessary after first command
+```
+
+Then you can build:
+
+```
+cd fabric-samples/chaincode/viridian/go
 # go build
 go test -run BuildImage_Peer
 ```
+
+Is this step really necessary? But it was useful for debugging.
+
 
 ### Start a test network
 
 ```
 cd fabric-samples/first-network
+
 # Make sure previous networks are removed so that we have a clean statedb
 ./byfn.sh down
+
 # Start up BYFN network with COUCHDB
 ./byfn.sh up -c mychannel -s couchdb
+
 # Login to docker container named 'cli'
 docker exec -it cli bash
+
+# Install chaincode:
+peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go
+
+# Instantiate chaincode:
+export CHANNEL_NAME=mychannel
+peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org0MSP.peer','Org1MSP.peer')"
+```
+
+Verify that it worked by looking in logs if CouchDB index was created:
+
+```
+docker logs peer0.org1.example.com  2>&1 | grep "CouchDB index"
+```
+
+It should return
+
+```
+[couchdb] CreateIndex -> INFO 089 Created CouchDB index [indexProductGTIN] in state database [mychannel_viridian] using design document [_design/indexProductGTINDoc]
 ```
 
 ### Install and instantiate chaincode
