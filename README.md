@@ -15,15 +15,22 @@ the network, a certain number of peers need to validate the request and agree
 that the proposed change is legitimate by adding their signature.
 
 This chaincode follows along the two tutorials
-[https://hyperledger-fabric.readthedocs.io/en/release-1.4/chaincode4ade.html](Chaincode
-for Developers) and
-[https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html](Using CouchDB).
+[Chaincode for Developers](https://hyperledger-fabric.readthedocs.io/en/release-1.4/chaincode4ade.html) and
+[Using CouchDB](https://hyperledger-fabric.readthedocs.io/en/release-1.4/couchdb_tutorial.html).
 The code is mainly based on the marbles02 example provided with a Hyperledger
 Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.go`.
 
 ## Deployment
 
-Place the content of this repository under `fabric-samples/chaincode`,
+### Prerequisites
+
+First install Hyperledger Fabric and Fabric's prerequisites, Docker and Go.
+
+Download the Hyperledger Fabric samples.
+
+### Download the code
+
+Place the content of this repository under Fabric's sample directory in `fabric-samples/chaincode`,
 e.g. in a directory `fabric-samples/chaincode/viridian`.
 
 ```
@@ -87,8 +94,16 @@ It should return
 [couchdb] CreateIndex -> INFO 089 Created CouchDB index [indexProductGTIN] in state database [mychannel_viridian] using design document [_design/indexProductGTINDoc]
 ```
 
-### Install and instantiate chaincode
+### Insert first test product
 
 ```
 docker exec -it cli bash
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["initProduct","7612100055557","Wander AG","[]","[\"UTZ\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantity\": \"400 g\"}]"]}'
+```
+
+### Query for product by gtin
+
+```
+docker exec -it cli bash
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
 ```
