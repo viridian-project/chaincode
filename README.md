@@ -20,6 +20,30 @@ This chaincode follows along the two tutorials
 The code is mainly based on the marbles02 example provided with a Hyperledger
 Fabric installation in `fabric-samples/chaincode/marbles02/go/marbles_chaincode.go`.
 
+## The model
+
+A heritage of the now inactive project Hyperledger Composer is the modeling language [Concerto](https://github.com/hyperledger/composer-concerto).
+
+We use the Concerto language to model our application data in a file `model/org.viridian.cto`.
+
+With the [Concert Tools](https://github.com/hyperledger/composer-concerto-tools), we can convert this file to UML, Go or other languages.
+
+```
+npm install -g composer-concerto-tools # need to install Node.js which also ships the npm package manager
+node ~/.nvm/versions/node/v8.16.0/lib/node_modules/composer-concerto-tools/cli.js generate --ctoFiles model/org.viridian.cto --format PlantUML
+node ~/.nvm/versions/node/v8.16.0/lib/node_modules/composer-concerto-tools/cli.js generate --ctoFiles model/org.viridian.cto --format Go
+```
+
+The conversions are written to files in the `output` folder.
+
+Convert the UML file to a PNG image with a UML diagram:
+
+```
+sudo apt install plantuml
+cd output
+plantuml
+```
+
 ## Deployment
 
 ### Prerequisites
