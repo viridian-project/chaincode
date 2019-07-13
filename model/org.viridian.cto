@@ -70,6 +70,7 @@ abstract participant User identified by name {
   o String avatarUrl regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to potentially external avatar image
   o String publicEmail regex=/^[^\s]+@[^\s]+\.[a-zA-Z0-9-]{2,}$/ optional
   o String bio optional /* let the users say something about themselves if they want */
+  o String preferredLang regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
 }
 
 participant Person extends User {
@@ -90,7 +91,16 @@ participant Person extends User {
   o String location optional // place where user is based
 }
 
-/* NGOs and other organizations can have verified 'official' accounts */
+enum OrgType {
+  o NON_GOVERNMENT_NOT_FOR_PROFIT
+  o GOVERNMENT_NOT_FOR_PROFIT
+  o FOR_PROFIT
+}
+
+/**
+  NGOs and other organizations can have verified 'official' accounts.
+  Also companies can use an "official" verified account to respond to information and ratings.
+*/
 participant Organization extends User {
   /* Organizations are verified by if they use an email address (in their UserContact)
      registered under their official domain name, ideally an official
@@ -101,16 +111,10 @@ participant Organization extends User {
      The check can and should probably be performed by a human. */
   /* Fields that can be edited by user: */
   o String orgName // what is the full official name of the organization?
+  o OrgType orgType
   o String url regex=/^[a-z]+:\/\/[^ ]+$/ // URL of the website of the org., where the used email address should be listed
   o String country regex=/^[A-Z]{2}$/ optional // ISO country code according to https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2 (just for information)
   o String address optional // where is this organization located?
-}
-
-participant Company extends Organization {
-  /* Logically the same as Organization. To distinguish profit-oriented companies
-     from NGOs etc., add this extra type of participant.
-     This account can be used to allow companies to respond to information and
-     ratings with an "official" account. */
 }
 
 /********************
