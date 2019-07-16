@@ -274,13 +274,13 @@ concept ArticleSource extends Source {
   o String[] authors
   o String journal
   o Integer year
-  o Integer month range=[1,12]
-  o Integer volume
+  o Integer month range=[1,12] optional
+  o Integer volume optional
   o Integer firstPage optional
   o Integer lastPage optional
   o String doi optional
   o String url regex=/^[a-z]+:\/\/[^ ]+$/ optional
-  o String booktitle optional
+  o String bookTitle optional
   o String editor optional
 }
 
