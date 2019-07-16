@@ -1,46 +1,31 @@
 package main
 
 import (
-  "bytes"
-  "encoding/json"
-  "fmt"
+	"bytes"
+	"encoding/json"
+	"fmt"
 
-  "github.com/hyperledger/fabric/core/chaincode/shim"
-  "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/protos/peer"
 )
 
 type ProductChaincode struct {
 }
 
-type Score struct {
-  Environment int `json:"environment"`
-  Climate     int `json:"climate"`
-  Society     int `json:"society"`
-  Health      int `json:"health"`
-  Economy     int `json:"economy"`
-}
-// ex:
-// &Score{
-//   Environment: -34,
-//   Climate: -46,
-//   Society: -7,
-//   Health: -78,
-//   Economy: 21,
-// }
-
 type ProductLocaleData struct {
-  Lang        string `json:"lang"`
-  Name        string `json:"name"`
-  Price       string `json:"price"`
-  Currency    string `json:"currency"`
-  Description string `json:"description"`
-  Quantity    string `json:"quantity"`
-  Ingredients string `json:"ingredients"`
-  Packaging   []string `json:"packaging"`
-  Categories  []string `json:"categories"`
-  Image       string `json:"image"`
-  ProductUrl  string `json:"productUrl"`
+	Lang        string   `json:"lang"`        // regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
+	Name        string   `json:"name"`        // product 'short name'
+	Price       string   `json:"price"`       // optional
+	Currency    string   `json:"currency"`    // optional
+	Description string   `json:"description"` // optional
+	Quantities  []string `json:"quantities"`
+	Ingredients string   `json:"ingredients"` // optional
+	Packaging   []string `json:"packaging"`
+	Categories  []string `json:"categories"`
+	ImageURL    string   `json:"imageUrl"` // optional
+	URL         string   `json:"url"`      // optional
 }
+
 // ex:
 // &ProductLocaleData{
 //   Lang: "de",
@@ -56,20 +41,15 @@ type ProductLocaleData struct {
 // }
 
 type Product struct {
-  ObjectType        string `json:"docType"` // docType is used to distinguish the various types of objects in state database
-  ID                uint64 `json:"id"`      // with the field tags (`json:...`), we set the names used in JSON, Go needs upper case
-  GTIN              string `json:"gtin"` // this is the barcode, see https://en.wikipedia.org/wiki/Global_Trade_Item_Number
-  CreatedBy         string `json:"createdBy"`
-  CreatedAt         string `json:"createdAt"`
-  UpdatedBy         string `json:"updatedBy"`
-  UpdatedAt         string `json:"updatedAt"`
-  Producer          string `json:"producer"`
-  ContainedProducts []string `json:"containedProducts"`
-  Labels            []string `json:"labels"`
-  Locale            []ProductLocaleData `json:"locale"`
-  Score             Score `json:"score"`
-  Status            string `json:"status"`
+	ScorableAsset
+	DocType           string              `json:"docType"` // docType is used to distinguish the various types of objects in state database
+	GTIN              string              `json:"gtin"`    // optional
+	Producer          string              `json:"producer"`
+	ContainedProducts []string            `json:"containedProducts"`
+	Labels            []string            `json:"labels"`
+	Locales           []ProductLocaleData `json:"locales"`
 }
+
 // ex:
 // &Product{
 //   ObjectType: "product",
@@ -131,22 +111,22 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 	// Handle different functions
 	if function == "initProduct" { // create a new product
 		return t.initProduct(stub, args)
-	// } else if function == "delete" { // delete a product
-	// 	return t.delete(stub, args)
-	// } else if function == "readProduct" { //read a product
-	// 	return t.readProduct(stub, args)
+		// } else if function == "delete" { // delete a product
+		// 	return t.delete(stub, args)
+		// } else if function == "readProduct" { //read a product
+		// 	return t.readProduct(stub, args)
 	} else if function == "queryProductsByGTIN" { // find product for GTIN X using rich query
 		return t.queryProductsByGTIN(stub, args)
-	// } else if function == "queryProducts" { // find products based on an ad hoc rich query
-	// 	return t.queryProducts(stub, args)
-	// } else if function == "getHistoryForProduct" { // get history of values for a product
-	// 	return t.getHistoryForProduct(stub, args)
-	// } else if function == "getMarblesByRange" { //get marbles based on range query
-	// 	return t.getMarblesByRange(stub, args)
-	// } else if function == "getMarblesByRangeWithPagination" {
-	// 	return t.getMarblesByRangeWithPagination(stub, args)
-	// } else if function == "queryMarblesWithPagination" {
-	// 	return t.queryMarblesWithPagination(stub, args)
+		// } else if function == "queryProducts" { // find products based on an ad hoc rich query
+		// 	return t.queryProducts(stub, args)
+		// } else if function == "getHistoryForProduct" { // get history of values for a product
+		// 	return t.getHistoryForProduct(stub, args)
+		// } else if function == "getMarblesByRange" { //get marbles based on range query
+		// 	return t.getMarblesByRange(stub, args)
+		// } else if function == "getMarblesByRangeWithPagination" {
+		// 	return t.getMarblesByRangeWithPagination(stub, args)
+		// } else if function == "queryMarblesWithPagination" {
+		// 	return t.queryMarblesWithPagination(stub, args)
 	}
 
 	fmt.Println("invoke did not find func: " + function) //error
@@ -159,17 +139,17 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var err error
 
-  // TODO: create incremental ID
-  id := uint64(1)
-  createdBy := "user123";
-  createdAt := "2019-03-17 22:45:35 UTC"
-  updatedBy := ""
-  updatedAt := ""
+	// TODO: create incremental ID
+	id := uint64(1)
+	createdBy := "user123"
+	createdAt := "2019-03-17 22:45:35 UTC"
+	updatedBy := ""
+	updatedAt := ""
 
 	//   0                  1              2                  3         4
 	// GTIN,             Producer,      ContainedProducts, Labels,    Locale
-  // "7612100055557", "Wander AG",    "[]",              `["UTZ"]`, `["lang": "de", ...]`
-  // or ""
+	// "7612100055557", "Wander AG",    "[]",              `["UTZ"]`, `["lang": "de", ...]`
+	// or ""
 	if len(args) != 5 {
 		return shim.Error("Incorrect number of arguments. Expecting 5")
 	}
@@ -177,68 +157,68 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	// ==== Input sanitation ====
 	fmt.Println("- start init product")
 
-  // === Arg 0: GTIN ===
-  gtin := args[0]
-  if len(gtin) > 0 {
-    fmt.Println("GTIN: " + gtin)
-  } else {
-    fmt.Println("GTIN not provided")
-  }
+	// === Arg 0: GTIN ===
+	gtin := args[0]
+	if len(gtin) > 0 {
+		fmt.Println("GTIN: " + gtin)
+	} else {
+		fmt.Println("GTIN not provided")
+	}
 
-  // === Arg 1: Producer ===
-  producer := args[1]
-  if len(producer) > 0 {
-    fmt.Println("Producer: " + gtin)
-  } else {
-    fmt.Println("Producer not provided")
-  }
+	// === Arg 1: Producer ===
+	producer := args[1]
+	if len(producer) > 0 {
+		fmt.Println("Producer: " + gtin)
+	} else {
+		fmt.Println("Producer not provided")
+	}
 
-  // === Arg 2: ContainedProducts ===
-  var containedProducts []string
-  err = json.Unmarshal([]byte(args[2]), &containedProducts)
-  if err != nil {
-    return shim.Error("3rd argument 'containedProducts' must be a string with " +
-      "a JSON list of IDs of contained products: [\"123\", \"456\", ...] " +
-      "(or an empty list: [])")
-  }
-  if len(containedProducts) > 0 {
-    fmt.Printf("ContainedProducts: %v", containedProducts)
-  } else {
-    fmt.Println("ContainedProducts not provided")
-  }
+	// === Arg 2: ContainedProducts ===
+	var containedProducts []string
+	err = json.Unmarshal([]byte(args[2]), &containedProducts)
+	if err != nil {
+		return shim.Error("3rd argument 'containedProducts' must be a string with " +
+			"a JSON list of IDs of contained products: [\"123\", \"456\", ...] " +
+			"(or an empty list: [])")
+	}
+	if len(containedProducts) > 0 {
+		fmt.Printf("ContainedProducts: %v", containedProducts)
+	} else {
+		fmt.Println("ContainedProducts not provided")
+	}
 
-  // === Arg 3: Labels ===
-  var labels []string
-  err = json.Unmarshal([]byte(args[3]), &labels)
-  if err != nil {
-    return shim.Error("4th argument 'labels' must be a string with " +
-      "a JSON list of labels labelling this product: [\"Fairtrade\", \"GOTS\", ...]" +
-      "(or an empty list: [])")
-  }
-  if len(labels) > 0 {
-    fmt.Printf("Labels: %v", labels)
-  } else {
-    fmt.Println("Labels not provided")
-  }
+	// === Arg 3: Labels ===
+	var labels []string
+	err = json.Unmarshal([]byte(args[3]), &labels)
+	if err != nil {
+		return shim.Error("4th argument 'labels' must be a string with " +
+			"a JSON list of labels labelling this product: [\"Fairtrade\", \"GOTS\", ...]" +
+			"(or an empty list: [])")
+	}
+	if len(labels) > 0 {
+		fmt.Printf("Labels: %v", labels)
+	} else {
+		fmt.Println("Labels not provided")
+	}
 
-  // === Arg 4: Locale ===
-  var locale []ProductLocaleData
-  err = json.Unmarshal([]byte(args[4]), &locale)
-  if err != nil {
-    return shim.Error("5th argument 'locale' must be a string with " +
-      "a JSON list of objects with keys 'lang', 'name', 'price', 'currency', " +
-      "'description', 'quantity', 'ingredients', 'packaging', 'categories', "+
-      "'image', 'productUrl', where each contains a string, except 'packaging' "+
-      "and 'categories' contain a list of strings.")
-  }
-  if len(locale) > 0 {
-    fmt.Printf("Locale: %+v", locale)
-  } else {
-    fmt.Println("Locale not provided")
-  }
+	// === Arg 4: Locale ===
+	var locale []ProductLocaleData
+	err = json.Unmarshal([]byte(args[4]), &locale)
+	if err != nil {
+		return shim.Error("5th argument 'locale' must be a string with " +
+			"a JSON list of objects with keys 'lang', 'name', 'price', 'currency', " +
+			"'description', 'quantity', 'ingredients', 'packaging', 'categories', " +
+			"'image', 'productUrl', where each contains a string, except 'packaging' " +
+			"and 'categories' contain a list of strings.")
+	}
+	if len(locale) > 0 {
+		fmt.Printf("Locale: %+v", locale)
+	} else {
+		fmt.Println("Locale not provided")
+	}
 
 	// ==== Check if product with this GTIN already exists ====
-  // TODO: use stub.GetQueryResult(query string)
+	// TODO: use stub.GetQueryResult(query string)
 	// productAsBytes, err := stub.GetState(productName)
 	// if err != nil {
 	// 	return shim.Error("Failed to get product: " + err.Error())
@@ -247,13 +227,13 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	// 	return shim.Error("This product already exists: " + productName)
 	// }
 
-  // Create new initial score
-  score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
+	// Create new initial score
+	score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
 
 	// ==== Create product object and marshal to JSON ====
 	objectType := "product"
 	product := &Product{objectType, id, gtin, createdBy, createdAt, updatedBy, updatedAt,
-    producer, containedProducts, labels, locale, score, "active"}
+		producer, containedProducts, labels, locale, score, "active"}
 	productJSONasBytes, err := json.Marshal(product)
 	if err != nil {
 		return shim.Error(err.Error())
