@@ -43,9 +43,9 @@ type ReviewableAsset struct { /* only Comment extends ReviewableAsset */
 type UpdatableAsset struct { /* only Information extends UpdatableAsset */
 	ReviewableAsset
 	UpdatedBy    string    `json:"updatedBy"` /* user ID, i.e. name */
-  UpdatedAt    time.Time `json:"updatedAt"`
-  Supersedes   string    `json:"supersedes"` // optional /* (ID of) Previous version of this asset before it was updated. */
-  SupersededBy string    `json:"supersededBy"` // optional /* (ID of) Newer version of this asset. */
+	UpdatedAt    time.Time `json:"updatedAt"`
+	Supersedes   string    `json:"supersedes"` // optional /* (ID of) Previous version of this asset before it was updated. */
+	SupersededBy string    `json:"supersededBy"` // optional /* (ID of) Newer version of this asset. */
 	ChangeReason string    `json:"changeReason"` // optional
 }
 type ScorableAsset struct { /* all others (Product, Producer, Label) extend ScorableAsset */
