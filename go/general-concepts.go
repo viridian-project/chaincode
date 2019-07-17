@@ -3,7 +3,9 @@ package main
 import "time"
 
 // like an enum:
-type Status int const (
+type Status int
+
+const (
 	PRELIMINARY Status = 1 + iota
 	ACTIVE
 	OUTDATED
@@ -18,6 +20,7 @@ type Score struct {
 	Health      int `json:"health"`      // range=[-100,100], impact on consumer's health, e.g. sugar and fat content in food or toxic substances in textiles or toys, acting on consumer
 	Economy     int `json:"economy"`     // range=[-100,100], in the sense of 'value for money', longevity of product, price/performance ratio, is price too high because of the psychologically developed brand image? how economical is product for consumer?
 }
+
 // example:
 // &Score{
 //   Environment: -34,
@@ -44,7 +47,7 @@ type UpdatableAsset struct { /* only Information extends UpdatableAsset */
 	ReviewableAsset
 	UpdatedBy    string    `json:"updatedBy"` /* user ID, i.e. name */
 	UpdatedAt    time.Time `json:"updatedAt"`
-	Supersedes   string    `json:"supersedes"` // optional /* (ID of) Previous version of this asset before it was updated. */
+	Supersedes   string    `json:"supersedes"`   // optional /* (ID of) Previous version of this asset before it was updated. */
 	SupersededBy string    `json:"supersededBy"` // optional /* (ID of) Newer version of this asset. */
 	ChangeReason string    `json:"changeReason"` // optional
 }
