@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/core/chaincode/shim/ext/cid"
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
+// ProductChaincode is the chaincode associated with products
 type ProductChaincode struct {
 }
 
+// ProductLocaleData is the locale-specific (language-specific) part of a product
 type ProductLocaleData struct {
 	Lang        string   `json:"lang"`        // regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
 	Name        string   `json:"name"`        // product 'short name'
@@ -20,7 +24,7 @@ type ProductLocaleData struct {
 	Description string   `json:"description"` // optional
 	Quantities  []string `json:"quantities"`
 	Ingredients string   `json:"ingredients"` // optional
-	Packaging   []string `json:"packaging"`
+	Packagings  []string `json:"packagings"`
 	Categories  []string `json:"categories"`
 	ImageURL    string   `json:"imageUrl"` // optional
 	URL         string   `json:"url"`      // optional
@@ -32,14 +36,16 @@ type ProductLocaleData struct {
 //   Name: "Ovomaltine crunchy cream — 400 g",
 //   Price: "4.99",
 //   Currency: "€",
-//   Description: "Brotaufstrich mit malzhaltigem Getränkepulver Ovomaltine", Quantity: "400 g",
+//   Description: "Brotaufstrich mit malzhaltigem Getränkepulver Ovomaltine",
+//   Quantities: []string{"400 g"},
 //   Ingredients: "33% malzhaltiges Getränkepulver: Ovomaltine (Gerstenmalzextrakt, kondensierte Magermilch, kondensiertes Milchserum, fettarmer Kakao, Zucker, Fruktose, Magnesiumcarbonat, Calciumphosphat, Rapsöl, Vitamine [A, E, B1, B2, Pantothensäure, B6, Folsäure, B12, C, Biotin, Niacin], Kochsalz, Aroma Vanillin), Zucker, Pflanzenöle (Raps- und Palmöl), 2.6% Haselnüsse, Calciumphosphat, fettarmer Kakao, Emulgator Sonnenblumenlecithin, Aroma Vanillin.",
-//   Packaging: []string{"Glas", "Plastik"},
+//   Packagings: []string{"Glas", "Plastik"},
 //   Categories: []string{"Brotaufstriche", "Frühstück", "Nougatcremes"},
-//   Image: "products/1/de_1.png",
-//   ProductUrl: "http://www.ovomaltine.de/produkte/ovomaltine-crunchy-cream-1/",
+//   ImageURL: "ipfs://jf3f03-kf30-fk3-kf3-fk3.png",
+//   URL: "http://www.ovomaltine.de/produkte/ovomaltine-crunchy-cream-1/",
 // }
 
+// Product is the asset representing a product
 type Product struct {
 	ScorableAsset
 	DocType           string              `json:"docType"` // docType is used to distinguish the various types of objects in state database
@@ -52,38 +58,47 @@ type Product struct {
 
 // ex:
 // &Product{
-//   ObjectType: "product",
-//   ID: 1,
+//   ScorableAsset{
+//	   UpdatableAsset{
+//		   ReviewableAsset{
+//         CreatedBy: "user123",
+//         CreatedAt: "2018-12-24 12:11:54 UTC",
+//         Status: Active,
+//       },
+//       UpdatedBy: "user123",
+//       UpdatedAt: "2019-02-10 18:33:39 UTC",
+//       Supersedes: "product-bc36d43e-c40c-40c0-8086-dc19bc000fe1",
+//       SupersededBy: "",
+//       ChangeReason: "Wrong quantity information.",
+//		 },
+//		 Score: &Score{
+//       Environment: -34,
+//       Climate: -46,
+//       Society: -7,
+//       Health: -78,
+//       Economy: 21,
+//     },
+//   },
+//   DocType: "product",
 //   GTIN: "7612100055557",
-//   CreatedBy: "user123",
-//   CreatedAt: "2018-12-24 12:11:54 UTC",
-//   UpdatedBy: "user123",
-//   UpdatedAt: "2018-02-10 18:33:39 UTC",
-//   Producer: "Wander AG",
+//   Producer: "producer-afd05a40-4ed6-4ae5-8120-eb7daebc336c",
 //   ContainedProducts: []string{},
-//   Labels: []string{"H2892sKSksksdkwops9"},
+//   Labels: []string{"label-42c2f586-a893-485f-8995-8639446bb6b8"},
 //   Locale: []ProductLocaleData{
 //     &ProductLocaleData{
 //       Lang: "de",
 //       Name: "Ovomaltine crunchy cream — 400 g",
 //       Price: "4.99",
 //       Currency: "€",
-//       Description: "Brotaufstrich mit malzhaltigem Getränkepulver Ovomaltine", Quantity: "400 g",
+//       Description: "Brotaufstrich mit malzhaltigem Getränkepulver Ovomaltine",
+//       Quantities: []string{"400 g"},
 //       Ingredients: "33% malzhaltiges Getränkepulver: Ovomaltine (Gerstenmalzextrakt, kondensierte Magermilch, kondensiertes Milchserum, fettarmer Kakao, Zucker, Fruktose, Magnesiumcarbonat, Calciumphosphat, Rapsöl, Vitamine [A, E, B1, B2, Pantothensäure, B6, Folsäure, B12, C, Biotin, Niacin], Kochsalz, Aroma Vanillin), Zucker, Pflanzenöle (Raps- und Palmöl), 2.6% Haselnüsse, Calciumphosphat, fettarmer Kakao, Emulgator Sonnenblumenlecithin, Aroma Vanillin.",
-//       Packaging: []string{"Glas", "Plastik"},
+//       Packagings: []string{"Glas", "Plastik"},
 //       Categories: []string{"Brotaufstriche", "Frühstück", "Nougatcremes"},
-//       Image: "products/1/de_1.png",
-//       ProductUrl: "http://www.ovomaltine.de/produkte/ovomaltine-crunchy-cream-1/",
+//       ImageURL: "ipfs://jf3f03-kf30-fk3-kf3-fk3.png",
+//       URL: "http://www.ovomaltine.de/produkte/ovomaltine-crunchy-cream-1/",
 //     },
 //   },
-//   Score: &Score{
-//     Environment: -34,
-//     Climate: -46,
-//     Society: -7,
-//     Health: -78,
-//     Economy: 21,
-//   },
-//   Status: "active",
 // }
 
 // ===================================================================================
@@ -139,46 +154,61 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var err error
 
-	// TODO: create incremental ID
-	id := uint64(1)
-	createdBy := "user123"
-	createdAt := "2019-03-17 22:45:35 UTC"
+	// Create initial values
+	createdBy, err := cid.GetID(stub)
+	fmt.Println(createdBy)
+	if err != nil {
+		return shim.Error("Acces denied. There is a problem with the client certificate.")
+	}
+	createdAt := time.Now()
 	updatedBy := ""
-	updatedAt := ""
+	updatedAt, _ := time.Parse("2005-12-31", "1776-03-09")
+	supersedes := ""
+	supersededBy := ""
+	changeReason := ""
+	score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
 
-	//   0                  1              2                  3         4
-	// GTIN,             Producer,      ContainedProducts, Labels,    Locale
-	// "7612100055557", "Wander AG",    "[]",              `["UTZ"]`, `["lang": "de", ...]`
+	//  0                     1                  2                                  3            4               5
+	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,         Locales
+	// "8a259c61-6825-...", "7612100055557", "producer-a3006838-bdf2-...", "[]",              `["UTZ", ...]`, `[{"lang": "de", ...}]`
 	// or ""
-	if len(args) != 5 {
-		return shim.Error("Incorrect number of arguments. Expecting 5")
+	if len(args) != 6 {
+		return shim.Error("Incorrect number of arguments. Expecting 6.")
 	}
 
 	// ==== Input sanitation ====
 	fmt.Println("- start init product")
 
-	// === Arg 0: GTIN ===
-	gtin := args[0]
+	// === Arg 0: Key ===
+	key := args[0]
+	if len(key) > 0 {
+		fmt.Println("Key: " + key)
+	} else {
+		fmt.Println("Key not provided")
+	}
+
+	// === Arg 1: GTIN ===
+	gtin := args[1]
 	if len(gtin) > 0 {
 		fmt.Println("GTIN: " + gtin)
 	} else {
 		fmt.Println("GTIN not provided")
 	}
 
-	// === Arg 1: Producer ===
-	producer := args[1]
+	// === Arg 2: Producer ===
+	producer := args[2]
 	if len(producer) > 0 {
 		fmt.Println("Producer: " + gtin)
 	} else {
 		fmt.Println("Producer not provided")
 	}
 
-	// === Arg 2: ContainedProducts ===
+	// === Arg 3: ContainedProducts ===
 	var containedProducts []string
-	err = json.Unmarshal([]byte(args[2]), &containedProducts)
+	err = json.Unmarshal([]byte(args[3]), &containedProducts)
 	if err != nil {
-		return shim.Error("3rd argument 'containedProducts' must be a string with " +
-			"a JSON list of IDs of contained products: [\"123\", \"456\", ...] " +
+		return shim.Error("4th argument 'containedProducts' must be a string with " +
+			"a JSON list of Keys of contained products, e.g.: [\"product-123\", \"product-456\", ...] " +
 			"(or an empty list: [])")
 	}
 	if len(containedProducts) > 0 {
@@ -187,12 +217,12 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 		fmt.Println("ContainedProducts not provided")
 	}
 
-	// === Arg 3: Labels ===
+	// === Arg 4: Labels ===
 	var labels []string
-	err = json.Unmarshal([]byte(args[3]), &labels)
+	err = json.Unmarshal([]byte(args[4]), &labels)
 	if err != nil {
-		return shim.Error("4th argument 'labels' must be a string with " +
-			"a JSON list of labels labelling this product: [\"Fairtrade\", \"GOTS\", ...]" +
+		return shim.Error("5th argument 'labels' must be a string with " +
+			"a JSON list of label Keys labelling this product: [\"label-bd80e824-938c-...\", \"label-127cc795-3a20-...\", ...]" +
 			"(or an empty list: [])")
 	}
 	if len(labels) > 0 {
@@ -201,15 +231,15 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 		fmt.Println("Labels not provided")
 	}
 
-	// === Arg 4: Locale ===
+	// === Arg 5: Locale ===
 	var locale []ProductLocaleData
-	err = json.Unmarshal([]byte(args[4]), &locale)
+	err = json.Unmarshal([]byte(args[5]), &locale)
 	if err != nil {
-		return shim.Error("5th argument 'locale' must be a string with " +
+		return shim.Error("6th argument 'locale' must be a string with " +
 			"a JSON list of objects with keys 'lang', 'name', 'price', 'currency', " +
-			"'description', 'quantity', 'ingredients', 'packaging', 'categories', " +
-			"'image', 'productUrl', where each contains a string, except 'packaging' " +
-			"and 'categories' contain a list of strings.")
+			"'description', 'quantities', 'ingredients', 'packagings', 'categories', " +
+			"'imageUrl', 'url', where each contains a string, except 'quantities', " +
+			"'packagings' and 'categories' contain a list of strings.")
 	}
 	if len(locale) > 0 {
 		fmt.Printf("Locale: %+v", locale)
@@ -227,13 +257,15 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	// 	return shim.Error("This product already exists: " + productName)
 	// }
 
-	// Create new initial score
-	score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
-
 	// ==== Create product object and marshal to JSON ====
-	objectType := "product"
-	product := &Product{objectType, id, gtin, createdBy, createdAt, updatedBy, updatedAt,
-		producer, containedProducts, labels, locale, score, "active"}
+	docType := "product"
+	product := &Product{
+		ScorableAsset{
+			UpdatableAsset{
+				ReviewableAsset{createdBy, createdAt, Preliminary},
+				updatedBy, updatedAt, supersedes, supersededBy, changeReason},
+			score},
+		docType, gtin, producer, containedProducts, labels, locale}
 	productJSONasBytes, err := json.Marshal(product)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -243,7 +275,7 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	//productJSONasBytes := []byte(str)
 
 	// === Save product to state ===
-	err = stub.PutState(string(id), productJSONasBytes)
+	err = stub.PutState(docType+"-"+key, productJSONasBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
