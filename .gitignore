@@ -13,3 +13,6 @@
 
 # Output of the concerto conversion tool:
 output
+
+# Go vendoring (external dependencies):
+go/vendor

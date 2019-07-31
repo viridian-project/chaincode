@@ -83,8 +83,30 @@ go test -run BuildImage_Peer
 
 Is this step really necessary? But it was useful for debugging.
 
+### Deploy the chaincode
 
-### Start a test network
+#### Add external dependencies ("vendoring")
+
+To add the external dependency "client identity" (CID) library, which is needed to access the client's, i.e. user's, certificate, use `govendor`:
+
+Install govendor:
+
+```
+go get -u github.com/kardianos/govendor
+```
+
+In your chaincode directory (i.e. inside the `go` directory):
+
+(Note: For this to work, the `go` directory must be somewhere under the `$GOPATH`. You can create a symbolic link `viridian` inside `$GOPATH/src` that points to the `go` directory under `fabric-samples/chaincode/viridian` and then `cd` into `$GOPATH/src/viridian`.)
+
+```
+govendor init
+govendor add github.com/hyperledger/fabric/core/chaincode/shim/ext/cid
+```
+
+This creates a `vendor` directory that is accessible to the chaincode when the code is installed on the peers.
+
+#### Start a test network
 
 ```
 cd fabric-samples/first-network
@@ -118,14 +140,14 @@ It should return
 [couchdb] CreateIndex -> INFO 089 Created CouchDB index [indexProductGTIN] in state database [mychannel_viridian] using design document [_design/indexProductGTINDoc]
 ```
 
-### Insert first test product
+#### Insert first test product
 
 ```
 docker exec -it cli bash
 peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["initProduct","7612100055557","Wander AG","[]","[\"UTZ\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantity\": \"400 g\"}]"]}'
 ```
 
-### Query for product by gtin
+#### Query for product by GTIN
 
 ```
 docker exec -it cli bash
