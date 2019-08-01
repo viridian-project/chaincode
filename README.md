@@ -125,7 +125,7 @@ peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go
 
 # Instantiate chaincode:
 export CHANNEL_NAME=mychannel
-peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org0MSP.peer','Org1MSP.peer')"
+peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
 ```
 
 Verify that it worked by looking in logs if CouchDB index was created:
@@ -142,14 +142,16 @@ It should return
 
 #### Insert first test product
 
+Inside the `cli` docker container:
+
 ```
-docker exec -it cli bash
-peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["initProduct","7612100055557","Wander AG","[]","[\"UTZ\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantity\": \"400 g\"}]"]}'
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["initProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
 ```
 
 #### Query for product by GTIN
 
+Inside the `cli` docker container:
+
 ```
-docker exec -it cli bash
 peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
 ```

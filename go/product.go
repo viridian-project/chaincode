@@ -168,9 +168,9 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	changeReason := ""
 	score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
 
-	//  0                     1                  2                                  3            4               5
-	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,         Locales
-	// "8a259c61-6825-...", "7612100055557", "producer-a3006838-bdf2-...", "[]",              `["UTZ", ...]`, `[{"lang": "de", ...}]`
+	//  0                     1                  2                                  3            4                                   5
+	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,                             Locales
+	// "8a259c61-6825-...", "7612100055557", "producer-a3006838-bdf2-...", "[]",              `["label-31d3a05e-fb10-...", ...]`, `[{"lang": "de", ...}]`
 	// or ""
 	if len(args) != 6 {
 		return shim.Error("Incorrect number of arguments. Expecting 6.")
