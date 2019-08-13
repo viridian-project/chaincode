@@ -48,9 +48,113 @@ plantuml
 
 ### Prerequisites
 
-First install Hyperledger Fabric and Fabric's prerequisites, Docker and Go.
+First install Hyperledger Fabric's prerequisites, Docker and Go.
+
+#### For Ubuntu Linux (tested on 16.04)
+
+##### Install Docker
+
+```
+sudo apt-get update
+
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo apt-key fingerprint 0EBFCD88
+
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+# See if it works:
+
+sudo docker run hello-world
+
+# For default user to be able to interact with Docker daemon, add it to the group `docker`: (see https://docs.docker.com/install/linux/linux-postinstall/)
+
+sudo usermod -aG docker $USER
+
+# Log out of the OS and in again
+# If the following command returns no error message, it worked:
+
+docker ps
+
+# Now docker run can also run without sudo:
+
+docker run hello-world
+
+# Install docker-compose: (needed later to start up the blockchain)
+
+sudo pip3 install docker-compose
+```
+
+##### Install Go
+
+```
+# Download:
+curl -sL -o go1.11.5.linux-amd64.tar.gz https://dl.google.com/go/go1.11.5.linux-amd64.tar.gz
+
+# Compare checksum with the one on https://golang.org/dl/:
+sha256sum go1.11.5.linux-amd64.tar.gz
+
+# Untar to install:
+sudo tar -C /usr/local -xzf go1.11.5.linux-amd64.tar.gz
+
+# Set environment variable to make go executables executable
+# Put this lines at the end of the file `~/.bashrc`:
+export PATH=$PATH:/usr/local/go/bin
+
+# Set a gopath variable where you will later put your
+# chaincode.
+# Also downloaded go packages are put there (see below).
+# Add lines in file `~/.bashrc`:
+export GOPATH=$HOME/path/to/my/chaincode_dir
+export PATH=$PATH:$GOPATH/bin
+
+# In terminal type commands:
+mkdir $GOPATH/bin
+mkdir $GOPATH/src
+
+# Optional: install some extra go packages:
+# A REPL:
+go get -u github.com/motemen/gore/cmd/gore
+# For code-completion in the REPL:
+go get -u github.com/mdempsky/gocode
+# Sth. else for REPL:
+go get -u github.com/k0kubun/pp
+# For using :doc in REPL:
+go get -u golang.org/x/tools/cmd/godoc
+```
+
+#### Install Hyperledger Fabric
 
 Download the Hyperledger Fabric samples.
+
+```
+curl -sSL https://raw.githubusercontent.com/hyperledger/fabric/master/scripts/bootstrap.sh | bash -s 1.4.0
+# Shorter version:
+# curl -sSL http://bit.ly/2ysbOFE | bash -s 1.4.0
+
+cd fabric-samples
+
+echo $(pwd)/bin
+
+# Take the result of the last command ($(pwd)/bin) and put
+# it into a new line in `~/.bashrc`:
+# New line in `~/.bashrc`:
+export PATH=<output of echo $(pwd)/bin>:$PATH
+
+# If you haven't done so before, set the $GOPATH variable to a location
+# where you will later store your chaincode:
+export GOPATH=$HOME/path/to/my/chaincode_dir
+export PATH=$PATH:$GOPATH/bin
+
+mkdir $GOPATH/bin
+mkdir $GOPATH/src
+```
 
 ### Download the code
 
@@ -102,6 +206,8 @@ In your chaincode directory (i.e. inside the `go` directory):
 ```
 govendor init
 govendor add github.com/hyperledger/fabric/core/chaincode/shim/ext/cid
+govendor add github.com/golang/protobuf/proto # Dep of cid
+govendor add github.com/pkg/errors # Dep of cid
 ```
 
 This creates a `vendor` directory that is accessible to the chaincode when the code is installed on the peers.
@@ -121,7 +227,7 @@ cd fabric-samples/first-network
 docker exec -it cli bash
 
 # Install chaincode:
-peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go
+peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go/
 
 # Instantiate chaincode:
 export CHANNEL_NAME=mychannel
