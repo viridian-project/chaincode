@@ -16,3 +16,6 @@ output
 
 # Go vendoring (external dependencies):
 go/vendor
+
+# Compiled executable:
+go/viridian
