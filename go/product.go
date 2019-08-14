@@ -109,39 +109,43 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error starting Product chaincode: %s", err)
 	}
+	// err = shim.Start(new(ProducerChaincode))
+	// if err != nil {
+	// 	fmt.Printf("Error starting Producer chaincode: %s", err)
+	// }
 }
 
-// Init initializes chaincode
-// ===========================
-func (t *ProductChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
+// Init initializes the chaincode
+// ==============================
+func (c *ProductChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	return shim.Success(nil)
 }
 
 // Invoke - Our entry point for Invocations
 // ========================================
-func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+func (c *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	function, args := stub.GetFunctionAndParameters()
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
 	if function == "initProduct" { // create a new product
-		return t.initProduct(stub, args)
+		return c.initProduct(stub, args)
 		// } else if function == "delete" { // delete a product
-		// 	return t.delete(stub, args)
+		// 	return c.delete(stub, args)
 		// } else if function == "readProduct" { //read a product
-		// 	return t.readProduct(stub, args)
+		// 	return c.readProduct(stub, args)
 	} else if function == "queryProductsByGTIN" { // find product for GTIN X using rich query
-		return t.queryProductsByGTIN(stub, args)
+		return c.queryProductsByGTIN(stub, args)
 		// } else if function == "queryProducts" { // find products based on an ad hoc rich query
-		// 	return t.queryProducts(stub, args)
+		// 	return c.queryProducts(stub, args)
 		// } else if function == "getHistoryForProduct" { // get history of values for a product
-		// 	return t.getHistoryForProduct(stub, args)
+		// 	return c.getHistoryForProduct(stub, args)
 		// } else if function == "getMarblesByRange" { //get marbles based on range query
-		// 	return t.getMarblesByRange(stub, args)
+		// 	return c.getMarblesByRange(stub, args)
 		// } else if function == "getMarblesByRangeWithPagination" {
-		// 	return t.getMarblesByRangeWithPagination(stub, args)
+		// 	return c.getMarblesByRangeWithPagination(stub, args)
 		// } else if function == "queryMarblesWithPagination" {
-		// 	return t.queryMarblesWithPagination(stub, args)
+		// 	return c.queryMarblesWithPagination(stub, args)
 	}
 
 	fmt.Println("invoke did not find func: " + function) //error
@@ -151,14 +155,22 @@ func (t *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respons
 // ===============================================================
 // initProduct - create a new product, store into chaincode state
 // ===============================================================
-func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	// Arguments:
+	//  0                     1                  2                                  3            4                                   5
+	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,                             Locales
+	// "8a259c61-6825-...", "7612100055557", "producer-a3006838-bdf2-...", "[]",              `["label-31d3a05e-fb10-...", ...]`, `[{"lang": "de", ...}]`
+	// or ""
+	if len(args) != 6 {
+		return shim.Error("Incorrect number of arguments. Expecting 6.")
+	}
+
 	var err error
 
 	// Create initial values
 	createdBy, err := cid.GetID(stub)
-	fmt.Println(createdBy)
 	if err != nil {
-		return shim.Error("Acces denied. There is a problem with the client certificate.")
+		return shim.Error("Access denied. There is a problem with the client certificate.")
 	}
 	createdAt := time.Now()
 	updatedBy := ""
@@ -167,14 +179,6 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	supersededBy := ""
 	changeReason := ""
 	score := Score{Environment: 0, Climate: 0, Society: 0, Health: 0, Economy: 0}
-
-	//  0                     1                  2                                  3            4                                   5
-	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,                             Locales
-	// "8a259c61-6825-...", "7612100055557", "producer-a3006838-bdf2-...", "[]",              `["label-31d3a05e-fb10-...", ...]`, `[{"lang": "de", ...}]`
-	// or ""
-	if len(args) != 6 {
-		return shim.Error("Incorrect number of arguments. Expecting 6.")
-	}
 
 	// ==== Input sanitation ====
 	fmt.Println("- start init product")
@@ -266,16 +270,16 @@ func (t *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 				updatedBy, updatedAt, supersedes, supersededBy, changeReason},
 			score},
 		docType, gtin, producer, containedProducts, labels, locale}
-	productJSONasBytes, err := json.Marshal(product)
+	jsonAsBytes, err := json.Marshal(product)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	//Alternatively, build the product json string manually if you don't want to use struct marshalling
+	//Alternatively, build the product json string manually if you don'`t` want to use struct marshalling
 	//productJSONasString := `{"docType":"product",  "name": "` + productName + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "owner": "` + owner + `"}`
-	//productJSONasBytes := []byte(str)
+	//jsonAsBytes := []byte(str)
 
 	// === Save product to state ===
-	err = stub.PutState(docType+"-"+key, productJSONasBytes)
+	err = stub.PutState(docType+"-"+key, jsonAsBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -378,7 +382,7 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 // and accepting a single query parameter (GTIN).
 // Only available on state databases that support rich query (e.g. CouchDB)
 // =========================================================================================
-func (t *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (c *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 
 	//       0
 	// "7612100055557"
