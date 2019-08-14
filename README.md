@@ -166,30 +166,7 @@ cd fabric-samples/chaincode
 git clone https://github.com/viridian-project/chaincode.git viridian
 ```
 
-### Compile the chaincode
-
-See https://stackoverflow.com/questions/37433618/how-to-use-a-chaincode-thats-not-on-github?rq=1.
-
-First install go package dependencies:
-
-```
-go get -u github.com/hyperledger/fabric/core/chaincode/shim
-# go get -u github.com/hyperledger/fabric/protos/peer # seems unnecessary after first command
-```
-
-Then you can build:
-
-```
-cd fabric-samples/chaincode/viridian/go
-# go build
-go test -run BuildImage_Peer
-```
-
-Is this step really necessary? But it was useful for debugging.
-
-### Deploy the chaincode
-
-#### Add external dependencies ("vendoring")
+### Add external dependencies ("vendoring")
 
 To add the external dependency "client identity" (CID) library, which is needed to access the client's, i.e. user's, certificate, use `govendor`:
 
@@ -212,13 +189,95 @@ govendor add github.com/pkg/errors # Dep of cid
 
 This creates a `vendor` directory that is accessible to the chaincode when the code is installed on the peers.
 
-#### Start a test network
+### Compile the chaincode for testing
+
+See https://stackoverflow.com/questions/37433618/how-to-use-a-chaincode-thats-not-on-github?rq=1.
+
+First install go package dependencies:
+
+```
+go get -u github.com/hyperledger/fabric/core/chaincode/shim
+# go get -u github.com/hyperledger/fabric/protos/peer # seems unnecessary after first command
+```
+
+Then you can build:
+
+```
+cd fabric-samples/chaincode/viridian/go
+# go build
+go test -run BuildImage_Peer
+```
+
+Is this step really necessary? But it was useful for debugging.
+
+### Test the chaincode in development mode
+
+Following `fabric-samples/chaincode-docker-devmode/README.rst`. This method is a bit faster than the one described under "Deploy the chaincode for testing using CouchDB". Unfortunately, this development mode uses leveldb and not CouchDB, so the Viridian chaincode is not fully compatible.
+
+Open three terminal windows with `fabric-samples/chaincode-docker-devmode/` as working directory.
+
+In terminal 1:
+```
+docker-compose -f docker-compose-simple.yaml up
+```
+
+In terminal 2:
+```
+docker exec -it chaincode bash
+cd viridian/go
+go build -o viridian
+# If it has worked, an executable (green color upon `ls`) file `viridian` was created.
+CORE_PEER_ADDRESS=peer:7052 CORE_CHAINCODE_ID_NAME=viridian:0 ./viridian
+```
+
+In terminal 3:
+```
+docker exec -it cli bash
+peer chaincode install -p chaincodedev/chaincode/viridian/go -n viridian -v 0
+peer chaincode instantiate -C myc -n viridian -v 0 -c '{"Args":["init"]}'
+
+# Insert first test product:
+peer chaincode invoke -C myc -n viridian -c '{"Args":["initProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
+
+# Query for product by GTIN:
+peer chaincode invoke -C myc -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
+```
+
+#### Shut down and start again
+
+Hit Ctrl-C in terminal 2 to stop the chaincode. Hit Ctrl-D in terminals 2 and 3 to log out. Hit Ctrl-C in terminal 1 to stop the containers.
+
+Remove the containers to be able to start fresh:
+
+```
+# Look for the container IDs with
+docker ps -a
+# Remove the containers `hyperledger/fabric-ccenv`, `hyperledger/fabric-tools`, `hyperledger/fabric-peer` and `hyperledger/fabric-orderer` by entering their IDs, e.g.:
+docker rm db8f289923ea 9edbb221665c 7070bf7e8409 32de20667557
+```
+
+Remove the chaincode container that was created by installing the chaincode on the peer:
+
+```
+# Look for a repository named dev-peer-viridian-0-bd97f47ca21f... and note its image ID
+docker images
+# Remove that image by its ID, e.g.:
+docker rmi ee4062331ce8
+```
+
+Now you have a clean state and could start fresh with `docker-compose -f docker-compose-simple.yaml up`.
+
+### Deploy the chaincode for testing using CouchDB (not for production)
 
 ```
 cd fabric-samples/first-network
 
 # Make sure previous networks are removed so that we have a clean statedb
 ./byfn.sh down
+# Look if there is a remnant chaincode image like `dev-peer0.org1.example.com-viridian-1.0-c1c88edc790...`:
+docker images
+# If so, remove that image, e.g. using its ID:
+docker rmi 0d6a11ebeee0
 
 # Start up BYFN network with COUCHDB
 ./byfn.sh up -c mychannel -s couchdb
@@ -233,6 +292,8 @@ peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go/
 export CHANNEL_NAME=mychannel
 peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
 ```
+
+#### Optional:
 
 Verify that it worked by looking in logs if CouchDB index was created:
 
@@ -260,4 +321,10 @@ Inside the `cli` docker container:
 
 ```
 peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
+```
+
+#### Insert the first test producer
+
+```
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n viridian -c '{"Args":["initProducer","84a234b7-c9d8-43b2-93c9-90f83d8773fb","Wander AG","CH-3176 Neuenegg, Switzerland","https://www.wander.ch/","[]"]}'
 ```
