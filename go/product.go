@@ -101,20 +101,6 @@ type Product struct {
 //   },
 // }
 
-// ===================================================================================
-// Main
-// ===================================================================================
-func main() {
-	err := shim.Start(new(ProductChaincode))
-	if err != nil {
-		fmt.Printf("Error starting Product chaincode: %s", err)
-	}
-	// err = shim.Start(new(ProducerChaincode))
-	// if err != nil {
-	// 	fmt.Printf("Error starting Producer chaincode: %s", err)
-	// }
-}
-
 // Init initializes the chaincode
 // ==============================
 func (c *ProductChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
