@@ -239,8 +239,8 @@ peer chaincode instantiate -C myc -n viridian -v 0 -c '{"Args":["init"]}'
 # Insert first test product:
 peer chaincode invoke -C myc -n viridian -c '{"Args":["initProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
 
-# Query for product by GTIN:
-peer chaincode invoke -C myc -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
+# Insert the first test producer:
+peer chaincode invoke -C myc -n viridian -c '{"Args":["initProducer","84a234b7-c9d8-43b2-93c9-90f83d8773fb","Wander AG","CH-3176 Neuenegg, Switzerland","https://www.wander.ch/","[]"]}'
 ```
 
 #### Shut down and start again
@@ -254,15 +254,6 @@ Remove the containers to be able to start fresh:
 docker ps -a
 # Remove the containers `hyperledger/fabric-ccenv`, `hyperledger/fabric-tools`, `hyperledger/fabric-peer` and `hyperledger/fabric-orderer` by entering their IDs, e.g.:
 docker rm db8f289923ea 9edbb221665c 7070bf7e8409 32de20667557
-```
-
-Remove the chaincode container that was created by installing the chaincode on the peer:
-
-```
-# Look for a repository named dev-peer-viridian-0-bd97f47ca21f... and note its image ID
-docker images
-# Remove that image by its ID, e.g.:
-docker rmi ee4062331ce8
 ```
 
 Now you have a clean state and could start fresh with `docker-compose -f docker-compose-simple.yaml up`.

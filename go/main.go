@@ -14,8 +14,9 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error starting Product chaincode: %s", err)
 	}
-	err = shim.Start(new(ProducerChaincode))
-	if err != nil {
-		fmt.Printf("Error starting Producer chaincode: %s", err)
-	}
+	// This does not work (only first): => Use only one central chaincode
+	// err = shim.Start(new(ProducerChaincode))
+	// if err != nil {
+	// 	fmt.Printf("Error starting Producer chaincode: %s", err)
+	// }
 }
