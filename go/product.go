@@ -204,16 +204,9 @@ func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-	if len(queryResults) > 0 {
+	if len(queryResults) > 2 { // empty means only bytes 91 and 93 (beginning and end of msg) contained
 		return shim.Error("Product with this GTIN already exists!")
 	}
-	// productAsBytes, err := stub.GetState(productName)
-	// if err != nil {
-	// 	return shim.Error("Failed to get product: " + err.Error())
-	// } else if productAsBytes != nil {
-	// 	fmt.Println("This product already exists: " + productName)
-	// 	return shim.Error("This product already exists: " + productName)
-	// }
 
 	// ==== Create product object and marshal to JSON ====
 	docType := "product"
