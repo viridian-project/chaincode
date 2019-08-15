@@ -200,7 +200,13 @@ func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	}
 
 	// ==== Check if product with this GTIN already exists ====
-	// TODO: use stub.GetQueryResult(query string)
+	queryResults, err := c.getQueryResultForGTIN(stub, gtin)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	if len(queryResults) > 0 {
+		return shim.Error("Product with this GTIN already exists!")
+	}
 	// productAsBytes, err := stub.GetState(productName)
 	// if err != nil {
 	// 	return shim.Error("Failed to get product: " + err.Error())
@@ -265,6 +271,11 @@ func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 // Rich queries can be used for point-in-time queries against a peer.
 // ============================================================================================
 
+func (c *ProductChaincode) getQueryResultForGTIN(stub shim.ChaincodeStubInterface, gtin string) ([]byte, error) {
+	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"gtin\": \"%s\"}}", gtin)
+	return getQueryResultForQueryString(stub, queryString)
+}
+
 // ===== Example: Parameterized rich query =================================================
 // queryProductsByGTIN queries for products based on a passed in GTIN number (barcode).
 // This is an example of a parameterized query where the query logic is baked into the chaincode,
@@ -278,7 +289,27 @@ func (c *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface,
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
 	gtin := args[0]
-	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"gtin\": \"%s\"}}", gtin)
+	queryResults, err := c.getQueryResultForGTIN(stub, gtin)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(queryResults)
+}
+
+func (c *ProductChaincode) queryProductsByName(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	//       0                                1
+	// product name query string   lang: e.g. "de" (optional)
+	if len(args) < 1 {
+		return shim.Error("Incorrect number of arguments. Expecting at least 1")
+	}
+	name := args[0]
+	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"locales\": [{\"name\": \"%s\"}]}}", name)
+	if len(args) > 1 {
+		lang := args[1]
+		if len(lang) > 0 {
+			queryString = fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"locales\": [{\"lang\": \"%s\", \"name\": \"%s\"}]}}", lang, name)
+		}
+	}
 	queryResults, err := getQueryResultForQueryString(stub, queryString)
 	if err != nil {
 		return shim.Error(err.Error())
