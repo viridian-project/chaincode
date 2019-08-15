@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -100,43 +99,6 @@ type Product struct {
 //     },
 //   },
 // }
-
-// Init initializes the chaincode
-// ==============================
-func (c *ProductChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
-	return shim.Success(nil)
-}
-
-// Invoke - Our entry point for Invocations
-// ========================================
-func (c *ProductChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
-	function, args := stub.GetFunctionAndParameters()
-	fmt.Println("invoke is running " + function)
-
-	// Handle different functions
-	if function == "initProduct" { // create a new product
-		return c.initProduct(stub, args)
-		// } else if function == "delete" { // delete a product
-		// 	return c.delete(stub, args)
-		// } else if function == "readProduct" { //read a product
-		// 	return c.readProduct(stub, args)
-	} else if function == "queryProductsByGTIN" { // find product for GTIN X using rich query
-		return c.queryProductsByGTIN(stub, args)
-		// } else if function == "queryProducts" { // find products based on an ad hoc rich query
-		// 	return c.queryProducts(stub, args)
-		// } else if function == "getHistoryForProduct" { // get history of values for a product
-		// 	return c.getHistoryForProduct(stub, args)
-		// } else if function == "getMarblesByRange" { //get marbles based on range query
-		// 	return c.getMarblesByRange(stub, args)
-		// } else if function == "getMarblesByRangeWithPagination" {
-		// 	return c.getMarblesByRangeWithPagination(stub, args)
-		// } else if function == "queryMarblesWithPagination" {
-		// 	return c.queryMarblesWithPagination(stub, args)
-	}
-
-	fmt.Println("invoke did not find func: " + function) //error
-	return shim.Error("Received unknown function invocation")
-}
 
 // ===============================================================
 // initProduct - create a new product, store into chaincode state
@@ -290,65 +252,6 @@ func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []
 	return shim.Success(nil)
 }
 
-// ===========================================================================================
-// constructQueryResponseFromIterator constructs a JSON array containing query results from
-// a given result iterator
-// ===========================================================================================
-func constructQueryResponseFromIterator(resultsIterator shim.StateQueryIteratorInterface) (*bytes.Buffer, error) {
-	// buffer is a JSON array containing QueryResults
-	var buffer bytes.Buffer
-	buffer.WriteString("[")
-
-	bArrayMemberAlreadyWritten := false
-	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-		// Add a comma before array members, suppress it for the first array member
-		if bArrayMemberAlreadyWritten == true {
-			buffer.WriteString(",")
-		}
-		buffer.WriteString("{\"Key\":")
-		buffer.WriteString("\"")
-		buffer.WriteString(queryResponse.Key)
-		buffer.WriteString("\"")
-
-		buffer.WriteString(", \"Value\":")
-		// Record is a JSON object, so we write as-is
-		buffer.WriteString(string(queryResponse.Value))
-		buffer.WriteString("}")
-		bArrayMemberAlreadyWritten = true
-	}
-	buffer.WriteString("]")
-
-	return &buffer, nil
-}
-
-// =========================================================================================
-// getQueryResultForQueryString executes the passed in query string.
-// Result set is built and returned as a byte array containing the JSON results.
-// =========================================================================================
-func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString string) ([]byte, error) {
-
-	fmt.Printf("- getQueryResultForQueryString queryString:\n%s\n", queryString)
-
-	resultsIterator, err := stub.GetQueryResult(queryString)
-	if err != nil {
-		return nil, err
-	}
-	defer resultsIterator.Close()
-
-	buffer, err := constructQueryResponseFromIterator(resultsIterator)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("- getQueryResultForQueryString queryResult:\n%s\n", buffer.String())
-
-	return buffer.Bytes(), nil
-}
-
 // =======Rich queries =========================================================================
 // Two examples of rich queries are provided below (parameterized query and ad hoc query).
 // Rich queries pass a query string to the state database.
@@ -369,17 +272,13 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 // Only available on state databases that support rich query (e.g. CouchDB)
 // =========================================================================================
 func (c *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-
 	//       0
 	// "7612100055557"
 	if len(args) < 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-
 	gtin := args[0]
-
 	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"gtin\": \"%s\"}}", gtin)
-
 	queryResults, err := getQueryResultForQueryString(stub, queryString)
 	if err != nil {
 		return shim.Error(err.Error())

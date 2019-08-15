@@ -23,23 +23,6 @@ type Producer struct {
 	Labels  []string `json:"labels"`
 }
 
-// Init initializes the chaincode
-func (c *ProducerChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
-	return shim.Success(nil)
-}
-
-// Invoke - Our entry point for Invocations
-func (c *ProducerChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
-	function, args := stub.GetFunctionAndParameters()
-
-	// Handle different functions
-	if function == "initProducer" { // create a new producer
-		return c.initProducer(stub, args)
-	}
-
-	return shim.Error("Received unknown function invocation")
-}
-
 func (c *ProducerChaincode) initProducer(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	// Arguments:
 	//  0                     1             2                              3                          4
