@@ -13,17 +13,18 @@ Product specification
 ---------------------
 
 \* = required
-&dagger; = must be unique
+
+<sup>&dagger;</sup> = must be unique
 
 * *addProduct:* It should be possible to add a new product.
     * **Inputs:**
-        * Product key (uuid)\*&dagger;,
+        * Product key (uuid)\*<sup>&dagger;</sup>,
         * GTIN
         * Producer key
         * Contained product keys
         * Label keys
         * Locales (at least one structure with the following fields):
-            * lang\*&dagger;
+            * lang\*<sup>&dagger;</sup>
             * name\*
             * price
             * currecny
@@ -57,13 +58,13 @@ Product specification
         * Old product key\*
         * Change reason\* (really make this required?)
         * Rest is same as "addProduct":
-            * New product key (uuid)\*&dagger;
+            * New product key (uuid)\*<sup>&dagger;</sup>
             * GTIN
             * Producer key
             * Contained product keys
             * Label keys
             * Locales (at least one structure with the following fields):
-                * lang\*&dagger;
+                * lang\*<sup>&dagger;</sup>
                 * name\*
                 * price
                 * currecny
