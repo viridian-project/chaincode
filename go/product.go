@@ -101,9 +101,9 @@ type Product struct {
 // }
 
 // ===============================================================
-// initProduct - create a new product, store into chaincode state
+// addProduct - create a new product, store into chaincode state
 // ===============================================================
-func (c *ProductChaincode) initProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (c *ProductChaincode) addProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	// Arguments:
 	//  0                     1                  2                                  3            4                                   5
 	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,                             Locales
@@ -296,12 +296,14 @@ func (c *ProductChaincode) queryProductsByName(stub shim.ChaincodeStubInterface,
 		return shim.Error("Incorrect number of arguments. Expecting at least 1")
 	}
 	name := args[0]
-	queryString := fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"locales\": [{\"name\": \"%s\"}]}}", name)
+	var queryString string
 	if len(args) > 1 {
 		lang := args[1]
 		if len(lang) > 0 {
 			queryString = fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"locales\": [{\"lang\": \"%s\", \"name\": \"%s\"}]}}", lang, name)
 		}
+	} else {
+		queryString = fmt.Sprintf("{\"selector\": {\"docType\": \"product\", \"locales\": [{\"name\": \"%s\"}]}}", name)
 	}
 	queryResults, err := getQueryResultForQueryString(stub, queryString)
 	if err != nil {

@@ -35,8 +35,8 @@ func (c *ViridianChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respon
 	fmt.Println("invoke is running " + function)
 
 	// Handle the product functions
-	if function == "initProduct" { // create a new product
-		return c.Product.initProduct(stub, args)
+	if function == "addProduct" { // create a new product
+		return c.Product.addProduct(stub, args)
 		// } else if function == "delete" { // delete a product
 		// 	return c.delete(stub, args)
 		// } else if function == "readProduct" { //read a product
@@ -53,6 +53,8 @@ func (c *ViridianChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Respon
 		// 	return c.getMarblesByRangeWithPagination(stub, args)
 		// } else if function == "queryMarblesWithPagination" {
 		// 	return c.queryMarblesWithPagination(stub, args)
+	} else if function == "queryProductsByName" {
+		return c.Product.queryProductsByName(stub, args)
 	}
 
 	// Handle the producer functions

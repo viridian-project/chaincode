@@ -12,8 +12,7 @@ Based on the specifications in this file, tests can be written that will ensure 
 Product specification
 ---------------------
 
-\* = required
-
+\* = required<br>
 <sup>&dagger;</sup> = must be unique
 
 * *addProduct:* It should be possible to add a new product.
