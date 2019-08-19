@@ -26,7 +26,7 @@ A heritage of the now inactive project Hyperledger Composer is the modeling lang
 
 We use the Concerto language to model our application data in a file `model/org.viridian.cto`.
 
-With the [Concert Tools](https://github.com/hyperledger/composer-concerto-tools), we can convert this file to UML, Go or other languages.
+With the [Concerto Tools](https://github.com/hyperledger/composer-concerto-tools), we can convert this file to UML, Go or other languages.
 
 ```
 npm install -g composer-concerto-tools # need to install Node.js which also ships the npm package manager
@@ -237,7 +237,7 @@ peer chaincode install -p chaincodedev/chaincode/viridian/go -n viridian -v 0
 peer chaincode instantiate -C myc -n viridian -v 0 -c '{"Args":["init"]}'
 
 # Insert first test product:
-peer chaincode invoke -C myc -n viridian -c '{"Args":["initProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
+peer chaincode invoke -C myc -n viridian -c '{"Args":["addProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
 
 # Insert the first test producer:
 peer chaincode invoke -C myc -n viridian -c '{"Args":["initProducer","84a234b7-c9d8-43b2-93c9-90f83d8773fb","Wander AG","CH-3176 Neuenegg, Switzerland","https://www.wander.ch/","[]"]}'
@@ -280,9 +280,8 @@ docker exec -it cli bash
 peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go/
 
 # Instantiate chaincode:
-export CHANNEL_NAME=mychannel
 export CAFILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHANNEL_NAME -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
+peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
 ```
 
 #### Optional:
@@ -304,7 +303,7 @@ It should return
 Inside the `cli` docker container:
 
 ```
-peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHANNEL_NAME -n viridian -c '{"Args":["initProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -c '{"Args":["addProduct","1fcc2c43-12a1-4451-ac56-dd73099b3f34","7612100055557","producer-84a234b7-c9d8-43b2-93c9-90f83d8773fb","[]","[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]", "[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"]}'
 ```
 
 #### Query for product by GTIN
@@ -312,20 +311,20 @@ peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHA
 Inside the `cli` docker container:
 
 ```
-peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHANNEL_NAME -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -c '{"Args":["queryProductsByGTIN","7612100055557"]}'
 ```
 
 #### Insert the first test producer
 
 ```
-peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHANNEL_NAME -n viridian -c '{"Args":["initProducer","84a234b7-c9d8-43b2-93c9-90f83d8773fb","Wander AG","CH-3176 Neuenegg, Switzerland","https://www.wander.ch/","[]"]}'
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -c '{"Args":["initProducer","84a234b7-c9d8-43b2-93c9-90f83d8773fb","Wander AG","CH-3176 Neuenegg, Switzerland","https://www.wander.ch/","[]"]}'
 ```
 
 #### Install new version of chaincode
 
 ```
 peer chaincode install -n viridian -v 1.1 -p github.com/chaincode/viridian/go/
-peer chaincode upgrade -o orderer.example.com:7050 --tls --cafile $CAFILE -C $CHANNEL_NAME -n viridian -v 1.1 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
+peer chaincode upgrade -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -v 1.1 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
 ```
 
 #### Remove old version of chaincode
@@ -349,10 +348,12 @@ docker exec -it peer0.org1.example.com bash
 ### Write a unit test
 
 From: https://blogs.sap.com/2019/01/11/how-to-write-unit-tests-for-hyperledger-fabric-go-chaincode/
+See also: https://medium.com/coinmonks/test-driven-hyperledger-fabric-golang-chaincode-development-dbec4cb78049
 
 ```
 go get -u github.com/onsi/ginkgo/ginkgo
 go get -u github.com/onsi/gomega/...
+go get -u github.com/s7techlab/cckit
 cd viridian/go
 ginkgo bootstrap
 ginkgo generate
