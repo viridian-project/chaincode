@@ -1,6 +1,8 @@
 package viridian_test
 
 import (
+	"fmt"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,8 +29,9 @@ var _ = Describe("Product", func() {
 				[]byte("[\"label-31d3a05e-fb10-483c-8c8b-0c7079e5bc95\"]"), // label keys
 				[]byte("[{\"lang\": \"de\", \"name\": \"Ovomaltine crunchy cream - 400 g\",\"price\": \"4.99\",\"currency\": \"EUR\",\"description\": \"Brotaufstrich mit malzhaltigem Getraenkepulver Ovomaltine\",\"quantities\": [\"400 g\"]}]"), // locales
 			}
-			receivedStatus := stub.MockInvoke("000", args).Status
-			Expect(receivedStatus).Should(Equal(status200))
+			response := stub.MockInvoke("000", args)
+			fmt.Println(response)
+			Expect(response.Status).Should(Equal(status200))
 		})
 	})
 })

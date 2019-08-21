@@ -52,6 +52,7 @@ Product specification
         * Not even one locale
         * More than one locale with same lang
         * Also add regex checks for GTIN, lang, price, currency, URLs etc.?
+        * Submitting user not registered
 * *editProduct:* It should be possible to edit (i.e. modify) a product, but only if its status is "Active" and there is no edit/deletion pending (=in the review queue, which is signified by `supersededBy` not being empty).
     * **Inputs:**
         * Old product key\*
@@ -103,6 +104,7 @@ Product specification
             * Not even one locale
             * More than one locale with same lang
             * Also add regex checks for GTIN, lang, price, currency, URLs etc.?
+            * Submitting user not registered
 * *deleteProduct:* It should be possible to delete (i.e. remove) a product, but only if its status is "Active" and there is no edit/deletion pending (=in the review queue, which is signified by `supersededBy` not being empty).
     * **Inputs:**
         * Product key\*
@@ -121,3 +123,4 @@ Product specification
         * Product does not have status "Active"
         * Product's `supersededBy` is not empty
         * No change reason provided (really make this required?)
+        * Submitting user not registered
