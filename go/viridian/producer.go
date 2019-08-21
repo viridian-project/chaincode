@@ -1,4 +1,4 @@
-package main
+package viridian
 
 import (
 	"encoding/json"
@@ -23,7 +23,8 @@ type Producer struct {
 	Labels  []string `json:"labels"`
 }
 
-func (c *ProducerChaincode) initProducer(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+// InitProducer creates a new producer and adds it to the blockchain
+func (c *ProducerChaincode) InitProducer(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	// Arguments:
 	//  0                     1             2                              3                          4
 	// Key,                 Name,        Address,                         URL                       Labels

@@ -1,4 +1,4 @@
-package main
+package viridian
 
 import (
 	"encoding/json"
@@ -100,10 +100,8 @@ type Product struct {
 //   },
 // }
 
-// ===============================================================
-// addProduct - create a new product, store into chaincode state
-// ===============================================================
-func (c *ProductChaincode) addProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+// AddProduct creates a new product, stores it into chaincode state
+func (c *ProductChaincode) AddProduct(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	// Arguments:
 	//  0                     1                  2                                  3            4                                   5
 	// Key,                 GTIN,            Producer,                     ContainedProducts, Labels,                             Locales
@@ -269,13 +267,11 @@ func (c *ProductChaincode) getQueryResultForGTIN(stub shim.ChaincodeStubInterfac
 	return getQueryResultForQueryString(stub, queryString)
 }
 
-// ===== Example: Parameterized rich query =================================================
-// queryProductsByGTIN queries for products based on a passed in GTIN number (barcode).
+// QueryProductsByGTIN queries for products based on a passed in GTIN number (barcode).
 // This is an example of a parameterized query where the query logic is baked into the chaincode,
 // and accepting a single query parameter (GTIN).
 // Only available on state databases that support rich query (e.g. CouchDB)
-// =========================================================================================
-func (c *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (c *ProductChaincode) QueryProductsByGTIN(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	//       0
 	// "7612100055557"
 	if len(args) < 1 {
@@ -289,7 +285,8 @@ func (c *ProductChaincode) queryProductsByGTIN(stub shim.ChaincodeStubInterface,
 	return shim.Success(queryResults)
 }
 
-func (c *ProductChaincode) queryProductsByName(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+// QueryProductsByName queries for products based on name
+func (c *ProductChaincode) QueryProductsByName(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	//       0                                1
 	// product name query string   lang: e.g. "de" (optional)
 	if len(args) < 1 {

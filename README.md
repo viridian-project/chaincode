@@ -178,7 +178,7 @@ go get -u github.com/kardianos/govendor
 
 In your chaincode directory (i.e. inside the `go` directory):
 
-(Note: For this to work, the `go` directory must be somewhere under the `$GOPATH`. You can create a symbolic link `viridian` inside `$GOPATH/src` that points to the `go` directory under `fabric-samples/chaincode/viridian` and then `cd` into `$GOPATH/src/viridian`.)
+(Note: For this to work, the `go` directory must be somewhere under the `$GOPATH`. You can create a symbolic link `viridian` inside `$GOPATH/src/github.com/chaincode` that points to the `fabric-samples/chaincode/viridian` directory and then `cd` into `$GOPATH/src/github.com/chaincode/viridian/go`.) With `$GOPATH/src/github.com/chaincode`, you obtain the same directory structure as on a Fabric node.
 
 ```
 govendor init
@@ -265,6 +265,10 @@ cd fabric-samples/first-network
 
 # Make sure previous networks are removed so that we have a clean statedb
 ./byfn.sh down
+# Remove any remnant docker containers: Look for images like `dev-peer0.org1.example.com-viridian-1.0-c1c88edc790...`:
+docker ps -a
+# If so, remove that container, e.g. using its names:
+docker rm dev-peer0.org1.example.com-viridian-1.0
 # Look if there is a remnant chaincode image like `dev-peer0.org1.example.com-viridian-1.0-c1c88edc790...`:
 docker images
 # If so, remove that image, e.g. using its ID:
@@ -353,8 +357,9 @@ See also: https://medium.com/coinmonks/test-driven-hyperledger-fabric-golang-cha
 ```
 go get -u github.com/onsi/ginkgo/ginkgo
 go get -u github.com/onsi/gomega/...
-go get -u github.com/s7techlab/cckit
+# maybe not needed, maybe yes: go get -u github.com/s7techlab/cckit
 cd viridian/go
-ginkgo bootstrap
-ginkgo generate
+mkdir viridian_test
+ginkgo bootstrap # generates the test suite file (which runs a suite of tests)
+ginkgo generate product # generates a test file `product_test.go` alongside `product.go`
 ```

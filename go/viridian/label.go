@@ -1,4 +1,4 @@
-package main
+package viridian
 
 // LabelLocaleData is the locale-specific (language-specific) part of a label
 type LabelLocaleData struct {
