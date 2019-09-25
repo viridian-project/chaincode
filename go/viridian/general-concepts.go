@@ -20,11 +20,12 @@ const (
 
 // Score is the sustainability rating of a scorable asset, either an "atomic" one (in a Rating), but usually, in a ScorableAsset, the averaged one
 type Score struct {
-	Environment int `json:"environment"` // range=[-100,100], air pollution, water pollution, ground pollution, waste, toxic substances released into environment etc., without GHG gases
-	Climate     int `json:"climate"`     // range=[-100,100], emission of GHG gases and other climate-active actions like land-use change
-	Society     int `json:"society"`     // range=[-100,100], working conditions, fair pay, workers' health, child labor, equity, treatment of suppliers, impact on society like charitable projects
-	Health      int `json:"health"`      // range=[-100,100], impact on consumer's health, e.g. sugar and fat content in food or toxic substances in textiles or toys, acting on consumer
-	Economy     int `json:"economy"`     // range=[-100,100], in the sense of 'value for money', longevity of product, price/performance ratio, is price too high because of the psychologically developed brand image? how economical is product for consumer?
+	Environment   int `json:"environment"`   // range=[-100,100], air pollution, water pollution, soil pollution, waste, harmful substances released into environment etc., without greenhouse gases
+	Climate       int `json:"climate"`       // range=[-100,100], emission of greenhouse gases and other climate-active actions like land-use change
+	Society       int `json:"society"`       // range=[-100,100], working conditions, fair pay, workers' health, child labor, equity, treatment of suppliers, impact on society like charitable projects
+	Health        int `json:"health"`        // range=[-100,100], impact on consumer's health, e.g. sugar and fat content in food or toxic substances in textiles or toys, acting on consumer
+	AnimalWelfare int `json:"animalWelfare"` // range=[-100,100], if animals were involved in the production, were they treated with due respect? Can they lead a pleasant, healthy life?
+	Economy       int `json:"economy"`       // range=[-100,100], in the sense of 'value for money', longevity of product, price/performance ratio, is price too high because of the psychologically developed brand image? how economical is product for consumer?
 }
 
 // example:
@@ -33,6 +34,7 @@ type Score struct {
 //   Climate: -46,
 //   Society: -7,
 //   Health: -78,
+//   AnimalWelfare: 10,
 //   Economy: 21,
 // }
 
