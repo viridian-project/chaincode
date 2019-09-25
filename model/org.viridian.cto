@@ -360,6 +360,27 @@ asset Rating identified by id {
     information lookups when recalculating average score. */
 }
 
+/**
+  Scores can also be inherited from another scorable asset (an asset that has a score),
+  like a Label, a Producer or another Product. With their votes, users decide about the
+  relevance of the inherited score. ScoreInheritances can be treated analogous to Ratings.
+/**
+
+asset ScoreInheritance identified by id {
+  o String id
+  --> ScorableAsset target
+  --> ScorableAsset source /* Score taken from the source */
+  /*
+    Not needed: ScoreInheritance automatically added when user adds label to product
+    --> User createdBy
+    o DateTime createdAt
+  */
+  o Integer weight default=0 /* sum of votes */
+  o Status status default="PRELIMINARY" /* This status should mirror the
+    information's status and is only provided for convenience to avoid frequent
+    information lookups when recalculating average score. */
+}
+
 /***********
  * COMMENT *
  ***********/
@@ -430,6 +451,10 @@ asset InfoVoting extends Voting {
 
 asset CommentVoting extends Voting {
   --> Comment comment
+}
+
+asset InheritanceVoting extends Voting {
+  --> ScoreInheritance inheritance
 }
 
 /* ---------------------------------------------------------------------------*/
