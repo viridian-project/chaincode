@@ -211,6 +211,31 @@ asset Producer extends ScorableAsset {
   --> Label[] labels
 }
 
+/**********************
+ * PRODUCT CATEGORIES *
+ **********************/
+
+concept ProductCategoryLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
+  o String name // product 'short name'
+  o String description optional // product 'long name' or the bottom licenses
+  // o String[] quantities optional // how much contained in one package? (can have several sizes)
+  // o String ingredients optional
+  // o String[] packaging
+  o String[] categories
+  o String[] imageUrl regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to potentially external product image
+  // o String url regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to producer website
+}
+
+asset ProductCategory extends ScorableAsset {
+  // o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
+  // --> Producer[] producers
+  // --> Product[] containedProducts
+  --> ProductCategory[] productCategories
+  --> Label[] labels
+  o ProductCategoryLocaleData[] locales
+}
+
 /************
  * PRODUCTS *
  ************/
@@ -233,6 +258,7 @@ asset Product extends ScorableAsset {
   o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
   --> Producer[] producers
   --> Product[] containedProducts
+  --> ProductCategory[] productCategories
   --> Label[] labels
   o ProductLocaleData[] locales
 }
