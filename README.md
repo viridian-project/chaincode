@@ -225,9 +225,9 @@ In terminal 2:
 ```
 docker exec -it chaincode bash
 cd viridian/go
-go build -o viridian
+go build -o viridian_chaincode
 # If it has worked, an executable (green color upon `ls`) file `viridian` was created.
-CORE_PEER_ADDRESS=peer:7052 CORE_CHAINCODE_ID_NAME=viridian:0 ./viridian
+CORE_PEER_ADDRESS=peer:7052 CORE_CHAINCODE_ID_NAME=viridian:0 ./viridian_chaincode
 ```
 
 In terminal 3:
@@ -287,6 +287,35 @@ peer chaincode install -n viridian -v 1.0 -p github.com/chaincode/viridian/go/
 export CAFILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $CAFILE -C mychannel -n viridian -v 1.0 -c '{"Args":["init"]}' -P "OR ('Org1MSP.peer','Org2MSP.peer')"
 ```
+
+Try `./byfn.sh restart -c mychannel -s couchdb` to restart after reboot without
+needing first down, then up.
+
+#### Optional: Start the network with Fabric CA
+
+In the steps above, instead of `./byfn.sh up -c mychannel -s couchdb`, use:
+
+```
+./byfn.sh up -c mychannel -s couchdb -f docker-compose-e2e.yaml
+```
+
+If you get an error like `No such container: cli` or similar, look into
+`docker-compose-cli.yaml` for the block starting with `cli:` and copy and paste
+it at the end of `docker-compose-e2e-template.yaml`. Then, run the command
+again.
+
+Afterwards, you can communicate with the Fabric CA server by using the
+`fabric-ca-client`.
+
+First enroll the bootstrap identity:
+
+```
+fabric-ca-client enroll -u http://admin:adminpw@localhost:7054
+```
+
+This creates a default configuration file under
+`$HOME/.fabric-ca-client/fabric-ca-client-config.yaml`, in which you can edit
+the `csr:` section and others.
 
 #### Optional:
 
@@ -349,6 +378,188 @@ docker exec -it peer0.org1.example.com bash
 > rm /var/hyperledger/production/chaincodes/viridian.1.0
 ```
 
+
+
+
+
+### Create a certificate for testing
+
+#### Install Fabric CA server
+
+Install `fabric-ca-server` and `fabric-ca-client` in `$GOPATH/bin`:
+```
+sudo apt install libtool libltdl-dev
+go get -u github.com/hyperledger/fabric-ca/cmd/...
+```
+
+#### Start Fabric CA server
+
+```
+mkdir ~/.fabric-ca-server
+cd ~/.fabric-ca-server
+fabric-ca-server start -b admin:adminpw
+```
+
+This generates the configuration file `fabric-ca-server-config.yaml`, an SQLite
+DB and some key files under `~/.fabric-ca-server`.
+
+When in production, change `tls.enabled` to `true` in the configuration file.
+
+Shut down the server with Ctrl-C. Next time you start the server, simply use
+
+```
+cd ~/.fabric-ca-server
+fabric-ca-server start
+```
+
+and the server uses the existing config file.
+
+#### Enroll the bootstrap identity
+
+Use `fabric-ca-client` to enroll the bootstrap identity (use same username and
+password as used when starting `fabric-ca-server`).
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/admin
+fabric-ca-client enroll -u http://admin:adminpw@localhost:7054
+```
+
+This generates the directory `~/.fabric-ca-client/admin`, a config file
+`~/.fabric-ca-client/admin/fabric-ca-client-config.yaml` and some key files under
+`~/.fabric-ca-client/admin/msp`.
+
+#### Add the default affiliation
+
+Affiliations can be used to define organizational hierarchies and map them onto
+certificates. We do not need this, so every identity shall be associated simply
+with the default affiliation `viridian`. It needs to be added first.
+
+```
+fabric-ca-client affiliation add viridian
+```
+
+#### Register a new network admin user
+
+Let's register a network admin who can add new peers and orderers to the network.
+
+```
+fabric-ca-client register --id.name netadmin --id.type client --id.affiliation viridian --id.maxenrollments -1 --id.attrs '"hf.Registrar.Roles=client,peer,orderer","hf.Registrar.Attributes=hf.Registrar.Roles,hf.Revoker",hf.Revoker=true'
+```
+
+`--id.type client` and `--id.maxenrollments` can be omitted because those are the 
+default values. We use the type `client`, because this admin is not supposed to be 
+associated with an orderer or peer, but is supposed to manage those.
+
+The above command is the same as:
+
+```
+fabric-ca-client identity add netadmin --json '{"secret": "netadminpw", "type": "client", "affiliation": "viridian", "max_enrollments": -1, "attrs": [{"name": "hf.Registrar.Roles", "value": "peer,orderer"}, {"name": "hf.Revoker", "value": "true"}]}'
+```
+
+and the same as:
+
+```
+fabric-ca-client identity add netadmin --secret netadminpw --type client --affiliation viridian --maxenrollments -1 --attrs '"hf.Registrar.Roles=peer,orderer","hf.Registrar.Attributes=hf.Registrar.Roles,hf.Revoker",hf.Revoker=true'
+```
+
+If you omit the secret in any of these commands, the server generates a secret
+(password) and it is printed into the terminal.
+
+#### Enroll the new network admin
+
+Use the secret either set or printed to terminal in the previous step. Enrolling the
+user means that a new directory with client configuration file and certificate is
+created. You should set the client home directory to a new value for each user
+enrollment, or the previous certificate will be overwritten and you will use your
+admin access.
+
+```
+# Switch to acting as the new user `netadmin` by the following command:
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/netadmin
+fabric-ca-client enroll -u http://netadmin:netadminpw@localhost:7054
+```
+
+#### Register a new peer or orderer having the right to register new users
+
+Let's register either a peer or an orderer identity. Peers and orderers are added by
+the `netadmin` identity created earlier. Peers/orderers shall have the right to add
+new "normal" users.
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/netadmin
+fabric-ca-client identity add peer1 --secret peer1pw --type peer --affiliation viridian --maxenrollments -1 --attrs 'hf.Registrar.Roles=client,hf.Revoker=true'
+```
+
+or:
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/netadmin
+fabric-ca-client identity add orderer1 --secret orderer1pw --type orderer --affiliation viridian --maxenrollments -1 --attrs 'hf.Registrar.Roles=client,hf.Revoker=true'
+```
+
+#### Enroll the new peer or orderer
+
+```
+# Switch to acting as the new user `peer1` by the following command:
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/peers/peer1
+fabric-ca-client enroll -u http://peer1:peer1pw@localhost:7054
+```
+
+or:
+
+```
+# Switch to acting as the new user `orderer1` by the following command:
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/orderers/orderer1
+fabric-ca-client enroll -u http://orderer1:orderer1pw@localhost:7054
+```
+
+#### Register a new normal user having no CA rights at all
+
+Let's use the new peer/orderer to add a new "normal" user.
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/peers/peer1
+fabric-ca-client identity add testuser --secret testuserpw --type client --affiliation viridian --maxenrollments 0
+```
+
+#### New normal user enrolls herself
+
+The admin gives the enrollment password to the user. She enrolls herself with the
+password:
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/users/testuser
+fabric-ca-client enroll -u http://testuser:testuserpw@localhost:7054
+```
+
+#### Try to register new user as normal user
+
+This should fail with an error `'testuser' is not a registrar`:
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/users/testuser
+fabric-ca-client identity add testuser2 --secret testuser2pw --type client --affiliation viridian --maxenrollments 0
+```
+
+#### List all registered users
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/admin
+fabric-ca-client identity list
+```
+
+#### List all issued certificates
+
+```
+export FABRIC_CA_CLIENT_HOME=~/.fabric-ca-client/admins/admin
+fabric-ca-client certificate list
+```
+
+
+
+
+
+
 ### Write a unit test
 
 From: https://blogs.sap.com/2019/01/11/how-to-write-unit-tests-for-hyperledger-fabric-go-chaincode/
@@ -358,8 +569,19 @@ See also: https://medium.com/coinmonks/test-driven-hyperledger-fabric-golang-cha
 go get -u github.com/onsi/ginkgo/ginkgo
 go get -u github.com/onsi/gomega/...
 # maybe not needed, maybe yes: go get -u github.com/s7techlab/cckit
+# or: change to a directory outside of $GOPATH
+#     git clone git@github.com:s7techlab/cckit.git
+#     go mod vendor
+# But then how to import the module?
 cd viridian/go
 mkdir viridian_test
 ginkgo bootstrap # generates the test suite file (which runs a suite of tests)
 ginkgo generate product # generates a test file `product_test.go` alongside `product.go`
+```
+
+Write the tests. Run the test suite with (while inside the `viridian_test` dir)
+
+```
+ginkgo
+ginkgo --trace
 ```

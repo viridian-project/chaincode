@@ -18,4 +18,4 @@ output
 go/vendor
 
 # Compiled executable:
-#go/viridian
+go/viridian_chaincode
