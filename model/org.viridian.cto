@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-/**
+/*
  * Write your model definitions here
  */
 
@@ -28,6 +28,7 @@ namespace org.viridian
   In `permissions.acl`, this asset can be given read-access only to admins and
   the users themselves.
 **/
+
 asset UserContact identified by id {
   o String id
   --> User user
@@ -49,6 +50,7 @@ asset UserContact identified by id {
   their UserContact is set to verified=true and the UserSecret is deleted.
   UserSecret is only visible to network admins.
 **/
+
 asset UserSecret identified by id {
   o String id
   --> UserContact contact
@@ -101,6 +103,7 @@ enum OrgType {
   NGOs and other organizations can have verified 'official' accounts.
   Also companies can use an "official" verified account to respond to information and ratings.
 */
+
 participant Organization extends User {
   /* Organizations are verified by if they use an email address (in their UserContact)
      registered under their official domain name, ideally an official
@@ -222,13 +225,13 @@ concept ProductLocaleData {
   o String ingredients optional
   o String[] packaging
   o String[] categories
-  o String imageUrl regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to potentially external product image
+  o String[] imageUrl regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to potentially external product image
   o String url regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to producer website
 }
 
 asset Product extends ScorableAsset {
   o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
-  --> Producer producer
+  --> Producer[] producers
   --> Product[] containedProducts
   --> Label[] labels
   o ProductLocaleData[] locales
@@ -364,7 +367,7 @@ asset Rating identified by id {
   Scores can also be inherited from another scorable asset (an asset that has a score),
   like a Label, a Producer or another Product. With their votes, users decide about the
   relevance of the inherited score. ScoreInheritances can be treated analogous to Ratings.
-/**
+**/
 
 asset ScoreInheritance identified by id {
   o String id
