@@ -192,8 +192,9 @@ concept LabelLocaleData {
   o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String name
   o String description optional
+  o String[] categories optional
+  o String[] logoUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional
   o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional
-  o String[] categories
 }
 
 asset Label extends ScorableAsset {
@@ -210,6 +211,7 @@ concept ProducerLocaleData {
   o String name
   o String description optional
   o String address optional
+  o String[] logoUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional
   o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional
 }
 
