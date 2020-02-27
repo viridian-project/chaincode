@@ -42,7 +42,7 @@ asset UserPrivate identified by id {
   o DateTime timestamp /* if contact data remain unverified for too long time, they are deleted */
   o Boolean verified default=false
   o String preferredLang regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
-  o String locale "undefined"
+  o String locale default="undefined"
   // XXX TODO: o String scoreWeighting
 }
 
@@ -293,7 +293,7 @@ abstract concept Source {
 
 concept WebSource extends Source {
   o String url regex=/^[a-z]+:\/\/[^ ]+$/
-  o Date accessDate
+  o DateTime accessDate
   o String title optional
   o String[] authors optional
 }
