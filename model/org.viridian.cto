@@ -293,7 +293,7 @@ abstract concept Source {
 
 concept WebSource extends Source {
   o String url regex=/^[a-z]+:\/\/[^ ]+$/
-  o DateTime accessDate
+  o Date accessDate
   o String title optional
   o String[] authors optional
 }
@@ -323,11 +323,16 @@ concept ArticleSource extends Source {
   o String editor optional
 }
 
-asset Information extends UpdatableAsset {
+concept InformationLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String title
+  o String description
+}
+
+asset Information extends UpdatableAsset {
   o InfoCategory category
   --> ScorableAsset target
-  o String description
+  o InformationLocaleData[] locales
   o Source[] sources
   o Integer weight default=0
 }
@@ -414,8 +419,8 @@ asset ScoreInheritance identified by id {
   */
   o Integer weight default=0 /* sum of votes */
   o Status status default="PRELIMINARY" /* This status should mirror the
-    information's status and is only provided for convenience to avoid frequent
-    information lookups when recalculating average score. */
+    source's status and is only provided for convenience to avoid frequent
+    source lookups when recalculating average score. */
 }
 
 /***********
@@ -454,7 +459,8 @@ concept Flag {
 }
 
 asset Comment extends ReviewableAsset {
-  --> Rating rating
+  --> UpdatableAsset target /* Comment can either be a general comment on a product/producer/label/product category, or can target an information on a product/producer/label/product category */
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String text
   o Integer weight default=0 /* sum of votes */
   o Flag flag optional
