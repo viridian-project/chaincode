@@ -462,6 +462,7 @@ concept Flag {
 asset Comment extends ReviewableAsset {
   --> UpdatableAsset target /* Comment can either be a general comment on a product/producer/label/product category, or can target an information on a product/producer/label/product category */
   o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
+  o String title optional
   o String text
   o Integer weight default=0 /* sum of votes */
   o Flag flag optional
