@@ -41,7 +41,7 @@ asset UserPrivate identified by id {
   https://stackoverflow.com/questions/2049502/what-characters-are-allowed-in-an-email-address) */
   o DateTime timestamp /* if contact data remain unverified for too long time, they are deleted */
   o Boolean verified default=false
-  o String[] preferredLanguages regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+  o String preferredLang regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
   o String locale default="undefined"
   // XXX TODO: o String scoreWeighting
 }
@@ -184,52 +184,48 @@ abstract asset ScorableAsset extends UpdatableAsset { /* all others (Product, Pr
   o Score score // shall be recalculated when any information changes
 }
 
-concept LanguageLink {
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
-  --> ScorableAsset target
-}
-
 /**********
  * LABELS *
  **********/
 
-asset Label extends ScorableAsset {
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+concept LabelLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String name
   o String description optional
   o String[] categories optional
   o String[] logoUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional
   o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional
+}
+
+asset Label extends ScorableAsset {
+  o LabelLocaleData[] locales
   o String version optional
-  o LanguageLink[] otherLanguages optional
 }
 
 /*************
  * PRODUCERS *
  *************/
 
-asset Producer extends ScorableAsset {
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+concept ProducerLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String name
   o String description optional
   o String address optional
   o String[] logoUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional
   o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional
+}
+
+asset Producer extends ScorableAsset {
+  o ProducerLocaleData[] locales
   --> Label[] labels
-  o LanguageLink[] otherLanguages optional
 }
 
 /**********************
  * PRODUCT CATEGORIES *
  **********************/
 
-asset ProductCategory extends ScorableAsset {
-  // o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
-  // --> Producer[] producers
-  // --> Product[] containedProducts
-  --> ProductCategory[] productCategories
-  --> Label[] labels
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+concept ProductCategoryLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String name // product 'short name'
   o String description optional // product 'long name' or the bottom licenses
   // o String[] quantities optional // how much contained in one package? (can have several sizes)
@@ -238,20 +234,23 @@ asset ProductCategory extends ScorableAsset {
   o String[] categories
   o String[] imageUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional // URLs to potentially external product image (use IPFS for uploaded files?)
   // o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional // URLs to producer website
-  o LanguageLink[] otherLanguages optional
+}
+
+asset ProductCategory extends ScorableAsset {
+  // o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
+  // --> Producer[] producers
+  // --> Product[] containedProducts
+  --> ProductCategory[] productCategories
+  --> Label[] labels
+  o ProductCategoryLocaleData[] locales
 }
 
 /************
  * PRODUCTS *
  ************/
 
-asset Product extends ScorableAsset {
-  o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
-  --> Producer[] producers
-  --> Product[] containedProducts
-  --> ProductCategory[] productCategories
-  --> Label[] labels
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+concept ProductLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String name // product 'short name'
   o String price optional
   o String currency optional
@@ -262,7 +261,15 @@ asset Product extends ScorableAsset {
   o String[] categories
   o String[] imageUrls regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to potentially external product image
   o String[] urls regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL to producer website
-  o LanguageLink[] otherLanguages optional
+}
+
+asset Product extends ScorableAsset {
+  o String gtin optional // Global Trade Item Number, i.e. barcode, product may not have one
+  --> Producer[] producers
+  --> Product[] containedProducts
+  --> ProductCategory[] productCategories
+  --> Label[] labels
+  o ProductLocaleData[] locales
 }
 
 /***************
@@ -317,22 +324,23 @@ concept ArticleSource extends Source {
   o String editor optional
 }
 
+concept InformationLocaleData {
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
+  o String title
+  o String description
+}
+
 asset Information extends UpdatableAsset {
   o InfoCategory category
   --> ScorableAsset target
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
-  o String title
-  o String description
+  o InformationLocaleData[] locales
   o Source[] sources
   --> Rating rating /* Each information should provide a suggested rating.
                        The information has no weight (vote balance) itself,
                        but the suggested rating has. If the user wishes to
                        add an information without suggesting a rating, a rating
                        will be created nevertheless (for storing the vote weight)
-                       where all score elements are null.
-                       For the ordering of informations in the frontend,
-                       the sum of all ratings belonging to the Information and
-                       the information's InfoComments is used. */
+                       where all score elements are null. */
 }
 
 /**********
@@ -470,7 +478,7 @@ concept Flag {
 }
 
 abstract asset Comment extends ReviewableAsset {
-  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+  o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
   o String title optional
   o String text
   o Flag flag optional
