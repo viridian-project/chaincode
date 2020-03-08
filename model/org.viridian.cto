@@ -41,7 +41,7 @@ asset UserPrivate identified by id {
   https://stackoverflow.com/questions/2049502/what-characters-are-allowed-in-an-email-address) */
   o DateTime timestamp /* if contact data remain unverified for too long time, they are deleted */
   o Boolean verified default=false
-  o String preferredLang regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
+  o String[] preferredLanguages regex=/^[a-z]{2}$/ optional // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1
   o String locale default="undefined"
   // XXX TODO: o String scoreWeighting
 }
