@@ -335,12 +335,21 @@ asset Information extends UpdatableAsset {
   --> ScorableAsset target
   o InformationLocaleData[] locales
   o Source[] sources
-  --> Rating rating /* Each information should provide a suggested rating.
-                       The information has no weight (vote balance) itself,
-                       but the suggested rating has. If the user wishes to
-                       add an information without suggesting a rating, a rating
-                       will be created nevertheless (for storing the vote weight)
-                       where all score elements are null. */
+  o Integer weight default=0 /* sum of votes */
+  /* If the user wishes to add an information without
+     suggesting a rating, they can use this docType. Otherwise,
+     they use a RatingInformation. */
+}
+
+asset RatingInformation extends Information {
+  --> Rating rating /* If the information provides a suggested rating,
+                       then its weight (vote balance) and the rating's weight
+                       must be synchronized. We store it redundantly at both
+                       the rating and the information, because at the rating,
+                       it is needed for calculating total score. At the
+                       information, it is needed for fetching only the top
+                       voted items from the DB. */
+                    
 }
 
 /**********
@@ -396,9 +405,19 @@ asset Review identified by id {
 
 asset Rating identified by id {
   o String id
-  --> ScorableAsset target
-  --> ReviewableAsset infoTarget /* infoTarget is either an Information or an InfoComment on an Information */
-  /* --> User createdBy /* redundant: would be the same as in infoTarget */
+  --> ScorableAsset target /* the product/label/producer/... that is rated */
+  --> ReviewableAsset infoTarget /* infoTarget is either an Information or a RatingComment on an Information.
+  The infoTarget indicates where the rating shall be displayed */
+  /*
+  --> Information information /* information this rating is based upon (one might use this to
+  ensure that only one rating on an information exists per user. Only one query is needed:
+  query for number of ratings on this information by this user. Alternative is not saving
+  the redundant data and using two queries: one query for number of RatingComments on the
+  information by the user (if 1, user is not allowed another RatingComment), one query to
+  see if the user created the rating on the information itself.) * /
+  --> User createdBy /* redundant: is the same as in infoTarget (one might use this to ensure
+  that only one rating on an information exists per user) * /
+  */
   /* o DateTime createdAt /* redundant: would be the same as in infoTarget */
   /* Ratings are not updatable (user may delete the Rating and create a new Rating with an InfoComment, maybe???
      But number of ratings based on one information must be limited to one per user!!!) */
@@ -482,16 +501,29 @@ abstract asset Comment extends ReviewableAsset {
   o String title optional
   o String text
   o Flag flag optional
-}
-
-asset AssetComment extends Comment {
-  --> ScorableAsset target /* Comment is a general comment on an asset like product/producer/label/product category */
   o Integer weight default=0 /* sum of votes */
 }
 
+asset AssetComment extends Comment {
+  --> ScorableAsset target /* Comment is a general comment on an asset like product/producer/label/product category. It has not suggested rating. */
+}
+
 asset InfoComment extends Comment {
-  --> Information target /* Comment targets an information on a product/producer/label/product category. Its weight is stored at rating. */
-  --> Rating rating
+  --> Information target /* Comment targets an information on a product/producer/label/product category and does not include a rating. Its weight is stored directly. */
+    /* If the user wishes to add a comment without
+     suggesting a rating, they can use this docType. Otherwise,
+     they use a RatingComment. */
+}
+
+asset RatingComment extends Comment {
+  --> Information target /* Comment targets an information on a product/producer/label/product category and includes a rating. Its weight is stored at the rating. */
+  --> Rating rating /* If the information provides a suggested rating,
+                       then its weight (vote balance) and the rating's weight
+                       must be synchronized.  We store it redundantly at both
+                       the rating and the comment, because at the rating,
+                       it is needed for calculating total score. At the
+                       comment, it is needed for fetching only the top
+                       voted items from the DB. */
 }
 
 /**********
