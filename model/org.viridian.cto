@@ -31,6 +31,9 @@ namespace org.viridian
 asset UserPrivate identified by id {
   o String id
   --> User user
+  o String country regex=/^[A-Z]{2}$/ // ISO country code according to https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2 (obligatory because passport number must be unique in each country)
+  o String passportNrHash /* the hash of the passport number to make sure
+      that this person only participates under one account */
   /*
   try to match all allowed email address characters according to https://stackoverflow.com/questions/2049502/what-characters-are-allowed-in-an-email-address,
   see esp. https://stackoverflow.com/a/2071250/4502495
@@ -82,12 +85,17 @@ participant Person extends User {
      passport number is stored to ensure that the person holding this
      passport is only registered under a single account (in computer
      science terms, to avoid a "Sybil attack").
+     It is unclear how the hash can be securely stored such that it is not
+     feasible to create a rainbow table. Using a salt is no option because
+     then the passport number would not be recognizable and the feature of
+     being able to look up if the ID/passport is already in use would be gone.
+     As an interim solution, it would be better to at least not make the hash
+     public and store it in UserPrivate e.g. Then, only people having access
+     to the whole raw blockchain data would be able to create a rainbow table.
+     But the optimal solution would be that creating a rainbow table is not possible for anyone.
      It would be good to have an automated passport validation, for
      scalability when the number of users becomes very high. If this is
      feasible remains to be seen. */
-  o String country regex=/^[A-Z]{2}$/ // ISO country code according to https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2 (obligatory because passport number must be unique in each country)
-  o String passportNrHash /* the hash of the passport number to make sure
-      that this person only participates under one account */
   /* Fields that can be edited by user: */
   o String realName optional // if user wants, they can enter their real name
   o String url regex=/^[a-z]+:\/\/[^ ]+$/ optional // URL of the website of the user (if any)
