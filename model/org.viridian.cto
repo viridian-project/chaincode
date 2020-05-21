@@ -506,7 +506,6 @@ concept Flag {
 
 abstract asset Comment extends ReviewableAsset {
   o String lang regex=/^[a-z]{2}$/ // ISO language code according to https://en.wikipedia.org/wiki/ISO_639-1, there should be only one locale data for each language
-  o String title optional
   o String text
   o Flag flag optional
   o Integer weight default=0 /* sum of votes */
@@ -514,6 +513,7 @@ abstract asset Comment extends ReviewableAsset {
 
 asset AssetComment extends Comment {
   --> ScorableAsset target /* Comment is a general comment on an asset like product/producer/label/product category. It has not suggested rating. */
+  o String title optional
 }
 
 asset InfoComment extends Comment {
